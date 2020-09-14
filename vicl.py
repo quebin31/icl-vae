@@ -38,6 +38,5 @@ if __name__ == "__main__":
         device
     )
 
-    test = torch.rand(1, 3, 32, 32, device=device)
-    out = vicl(test)
-    print(out)
+    for name, param in vicl.vae.named_parameters():
+        print(name, param)
