@@ -3,5 +3,5 @@
     "python.pythonPath": "python3",
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true,
-    "python.formatting.provider": "black"
+    "python.formatting.provider": "autopep8"
 }
