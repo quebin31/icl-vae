@@ -35,3 +35,17 @@ class VAE(nn.Module):
         mu, logvar = self.encode(x)
         z = self.reparameterize(mu, logvar)
         return self.decode(z), mu, logvar
+
+
+if __name__ == "__main__":
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    vae = VAE().to(device=device)
+    test = torch.randn(2, 4096, device=device)
+
+    (x_mu, x_logvar), z_mu, z_logvar = vae(test)
+    print(x_mu.shape)
+    print(x_logvar.shape)
+    print(z_mu.shape)
+    print(z_logvar.shape)
