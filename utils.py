@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+import random
 
 LOG_2_PI = 1.8378770664093453
 
@@ -20,5 +21,18 @@ def loss_term_vae(x, x_mu, x_logvar, z_mu, z_logvar):
     return KLD + LGP
 
 
-def loss_term_cos(x, z_mu, y):
-    pass
+def loss_term_cos(y, z_mu):
+    batch_size = y.shape[0]
+
+    total = 0.0
+    for _ in range(batch_size):
+        i = random.randrange(0, batch_size)
+        j = random.randrange(0, batch_size)
+        while j == i:
+            j = random.randrange(0, batch_size)
+        
+        sign = 1 if y[i] == y[j] else -1 
+        total += sign * cosine_distance(z_mu[i], z_mu[j])        
+    
+    return total
+    
