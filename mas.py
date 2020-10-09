@@ -63,3 +63,31 @@ class LocalSGD(optim.SGD):
                 param.data.add_(-group['lr'], d_param)
         
         return loss
+
+class OmegaSGD(optim.SGD):
+    def __init__(self, params, lr=0.001, momentum=0, dampening=0, weight_decay=0, nesterov=False):
+        super(OmegaSGD, self).__init__(params, lr,
+                                       momentum, dampening, weight_decay, nesterov)
+        
+    def __setstate__(self, state):
+        super(OmegaSGD, self).__setstate__(state)
+
+        
+    def step(self, reg_params, batch_index, batch_size, closure=None):
+        loss = closure() if closure is not None else None
+        
+        for group in self.param_groups:
+            weight_decay = group['weight_decay']
+            momentum = group['momentum']
+            dampening = group['dampening']
+            nesterov = group['nesterov']
+            
+            for param in group['params']:
+                if param.grad is None:
+                    continue
+
+                if param in reg_params:
+                    d_param = param.grad.data
+                    
+
+
