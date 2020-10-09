@@ -75,7 +75,7 @@ class VICL(nn.Module):
                 "init_val": init_val,
             }
 
-            reg_params[name] = param_dict
+            reg_params[param] = param_dict
 
         self.reg_params = reg_params
 
@@ -91,12 +91,12 @@ class VICL(nn.Module):
         reg_params = self.reg_params
 
         for name, param in self.vae.named_parameters():
-            if name in freeze or name not in reg_params:
+            if name in freeze or param not in reg_params:
                 continue
 
             print(f"Initializing omega values for layer {name} (new task)")
 
-            param_dict = reg_params[name]
+            param_dict = reg_params[param]
             prev_omega = reg_params["omega"]
 
             new_omega = torch.zeros(param.size(), device=device)
@@ -106,7 +106,7 @@ class VICL(nn.Module):
             param_dict["omega"] = new_omega
             param_dict["init_val"] = init_val
 
-            reg_params[name] = param_dict
+            reg_params[param] = param_dict
 
         self.reg_params = reg_params
 
@@ -120,11 +120,11 @@ class VICL(nn.Module):
         reg_params = self.reg_params
 
         for name, param in self.vae.named_parameters():
-            if name not in reg_params:
+            if param not in reg_params:
                 continue
 
             print(f"Consolidating the omega value for layer {name}")
-            param_dict = reg_params[name]
+            param_dict = reg_params[param]
 
             prev_omega = param_dict["prev_omega"]
 
@@ -134,7 +134,7 @@ class VICL(nn.Module):
             del param_dict["prev_omega"]
 
             param_dict["omega"] = new_omega
-            reg_params[name] = param_dict
+            reg_params[param] = param_dict
 
         self.reg_params = reg_params
 

@@ -1,7 +1,6 @@
 # Adapted from https://github.com/wannabeOG/MAS-PyTorch
 
 from torch import optim
-from itertools import tee
 
 
 class LocalSGD(optim.SGD):
@@ -10,12 +9,10 @@ class LocalSGD(optim.SGD):
     the network parameters
     """
 
-    def __init__(self, named_params, reg_lambda, lr=0.001, momentum=0, dampening=0, weight_decay=0, nesterov=False):
-        names, params = tee(named_params)
+    def __init__(self, params, reg_lambda, lr=0.001, momentum=0, dampening=0, weight_decay=0, nesterov=False):
         super(LocalSGD, self).__init__(params, lr,
                                        momentum, dampening, weight_decay, nesterov)
         self.reg_lambda = reg_lambda
-        self.param_names = names
 
     def __setstate__(self, state):
         super(LocalSGD, self).__setstate__(state)
@@ -29,15 +26,14 @@ class LocalSGD(optim.SGD):
             dampening = group['dampening']
             nesterov = group['nesterov']
 
-            for name, param in zip(self.param_names, group['params']):
+            for param in self.param_names:
                 if param.grad is None:
                     continue
 
                 d_param = param.grad.data
 
-                # Present omega value
                 if name in reg_params:
-                    param_dict = reg_params[name]
+                    param_dict = reg_params[param]
 
                     omega = param_dict['omega']
                     init_val = param_dict['init_val']
