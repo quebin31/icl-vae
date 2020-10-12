@@ -88,6 +88,19 @@ class OmegaSGD(optim.SGD):
 
                 if param in reg_params:
                     d_param = param.grad.data
+                    d_param_copy = d_param.clone().abs()
+
+                    param_dict = reg_params[param]
+
+                    omega = param_dict['omega']
                     
+                    current_size = (batch_index + 1) * batch_size 
+                    step_size = 1 / float(current_size) 
+                    
+                    omega = omega + step_size * (d_param_copy - batch_size * omega)
 
+                    param_dict['omega'] = omega 
+                    reg_params[param] = param_dict
 
+        return loss
+                    
