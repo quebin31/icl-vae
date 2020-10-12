@@ -4,6 +4,7 @@ import torch
 
 from torch import optim
 from vicl import Vicl
+from torch.utils.data import DataLoader
 
 
 class LocalSgd(optim.SGD):
@@ -12,7 +13,7 @@ class LocalSgd(optim.SGD):
     the network parameters
     """
 
-    def __init__(self, params, reg_lambda, lr=0.001, momentum=0, dampening=0, weight_decay=0, nesterov=False):
+    def __init__(self, params, reg_lambda: float, lr=0.001, momentum=0, dampening=0, weight_decay=0, nesterov=False):
         super(LocalSgd, self).__init__(params, lr,
                                        momentum, dampening, weight_decay, nesterov)
         self.reg_lambda = reg_lambda
@@ -77,7 +78,7 @@ class OmegaSgd(optim.SGD):
     def __setstate__(self, state):
         super(OmegaSgd, self).__setstate__(state)
 
-    def step(self, reg_params, batch_index, batch_size, closure=None):
+    def step(self, reg_params, batch_index: int, batch_size: int, closure=None):
         loss = closure() if closure is not None else None
 
         for group in self.param_groups:
@@ -110,7 +111,7 @@ class OmegaSgd(optim.SGD):
         return loss
 
 
-def compute_omega_grads_norm(model: Vicl, dataloader, optimizer: OmegaSgd):
+def compute_omega_grads_norm(model: Vicl, dataloader: DataLoader, optimizer: OmegaSgd):
     device = model.device()
 
     for index, batch in enumerate(dataloader):
@@ -125,6 +126,7 @@ def compute_omega_grads_norm(model: Vicl, dataloader, optimizer: OmegaSgd):
         l2_norm = torch.sum(l2_norm)
         l2_norm.backward()
 
-        optimizer.step(model.reg_params, batch_index=index, batch_size=inputs.size(0))
+        optimizer.step(model.reg_params, batch_index=index,
+                       batch_size=inputs.size(0))
 
     return model

@@ -10,7 +10,7 @@ from torchvision.models.utils import load_state_dict_from_url
 
 
 class Vicl(nn.Module):
-    def __init__(self, vgg_weigths):
+    def __init__(self, vgg_weigths: str):
         """
         Build the main model containing both the feature extractor and the 
         variational autoencoder.
