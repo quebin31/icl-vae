@@ -19,7 +19,7 @@ class Vicl(nn.Module):
             The URL to use when loading weigths for the VGG.
         """
 
-        super(VICL, self).__init__()
+        super(Vicl, self).__init__()
 
         self.extractor = Vgg19()
         self.vae = Vae()
@@ -63,7 +63,7 @@ class Vicl(nn.Module):
         if empty(self.class_idents):
             print(f"WARNING: No registered class identifiers")
 
-        for label, prototype in self.class_idents:
+        for label, prototype in self.class_idents.items():
             proto_mu, proto_logvar = prototype["mu"], prototype["logvar"]
 
             proto_mu = proto_mu.repeat(batch_size, 1)
@@ -71,8 +71,16 @@ class Vicl(nn.Module):
 
             mu_distances = cosine_distance(z_mu, proto_mu)
             logvar_distances = cosine_distance(z_logvar, proto_logvar)
+            distances = mu_distances + logvar_distances
 
-        return predict
+            for i in range(0, batch_size):
+                distance = distances[i].item()
+
+                if distance < min_distances[i]:
+                    min_distances[i] = distance
+                    prediction[i] = label
+
+        return prediction
 
     def device(self):
         """
@@ -173,9 +181,22 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    vicl = Vicl(weigths="https://download.pytorch.org/models/vgg19-dcbb9e9d.pth").to(
-        device
-    )
+    vicl = Vicl(
+        vgg_weigths="https://download.pytorch.org/models/vgg19-dcbb9e9d.pth")
+    vicl = vicl.to(device)
 
-    for name, param in vicl.vae.named_parameters():
-        print(name, param)
+    vicl.class_idents = {
+        1: {
+            "mu": torch.randn(512),
+            "logvar": torch.randn(512),
+        },
+        2: {
+            "mu": torch.randn(512),
+            "logvar": torch.randn(512),
+        }
+    }
+
+    vicl.eval()
+    x = torch.randn(4, 3, 32, 32)
+    prediction = vicl.predict(x)
+    print(prediction)
