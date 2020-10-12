@@ -1,5 +1,7 @@
 # Adapted from https://github.com/wannabeOG/MAS-PyTorch
 
+import torch
+
 from torch import optim
 from vicl import Vicl
 
@@ -107,3 +109,22 @@ class OmegaSgd(optim.SGD):
 
         return loss
 
+
+def compute_omega_grads_norm(model: Vicl, dataloader, optimizer: OmegaSgd):
+    device = model.device()
+
+    for index, batch in enumerate(dataloader):
+        inputs, labels = batch
+        inputs, labels = inputs.to(device), labels.to(device)
+
+        optimizer.zero_grad()
+
+        (x_mu, x_logvar), z_mu, z_logvar = model(inputs)
+
+        l2_norm = torch.norm(x_mu + x_logvar, 2, dim=1) ** 2
+        l2_norm = torch.sum(l2_norm)
+        l2_norm.backward()
+
+        optimizer.step(model.reg_params, batch_index=index, batch_size=inputs.size(0))
+
+    return model
