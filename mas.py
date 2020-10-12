@@ -1,21 +1,22 @@
 # Adapted from https://github.com/wannabeOG/MAS-PyTorch
 
 from torch import optim
+from vicl import Vicl
 
 
-class LocalSGD(optim.SGD):
+class LocalSgd(optim.SGD):
     """
     Optimizer that uses regularizer parameters (omegas) in the update of
     the network parameters
     """
 
     def __init__(self, params, reg_lambda, lr=0.001, momentum=0, dampening=0, weight_decay=0, nesterov=False):
-        super(LocalSGD, self).__init__(params, lr,
+        super(LocalSgd, self).__init__(params, lr,
                                        momentum, dampening, weight_decay, nesterov)
         self.reg_lambda = reg_lambda
 
     def __setstate__(self, state):
-        super(LocalSGD, self).__setstate__(state)
+        super(LocalSgd, self).__setstate__(state)
 
     def step(self, reg_params, closure=None):
         loss = closure() if closure is not None else None
@@ -49,39 +50,40 @@ class LocalSGD(optim.SGD):
 
                 if momentum != 0:
                     param_state = self.state[param]
-                       if 'momentum_buffer' not in param_state:
-                            buf = param_state['momentum_buffer'] = torch.clone(
-                                d_param).detach()
-                        else:
-                            buf = param_state['momentum_buffer']
-                            buf.mul_(momentum).add_(1 - dampening, d_p)
-                        if nesterov:
-                            d_param.add_(momentum, buf)
-                        else:
-                            d_param = buf
+                    if 'momentum_buffer' not in param_state:
+                        buf = param_state['momentum_buffer'] = torch.clone(
+                            d_param).detach()
+                    else:
+                        buf = param_state['momentum_buffer']
+                        buf.mul_(momentum).add_(1 - dampening, d_p)
+
+                    if nesterov:
+                        d_param.add_(momentum, buf)
+                    else:
+                        d_param = buf
 
                 param.data.add_(-group['lr'], d_param)
-        
+
         return loss
 
-class OmegaSGD(optim.SGD):
-    def __init__(self, params, lr=0.001, momentum=0, dampening=0, weight_decay=0, nesterov=False):
-        super(OmegaSGD, self).__init__(params, lr,
-                                       momentum, dampening, weight_decay, nesterov)
-        
-    def __setstate__(self, state):
-        super(OmegaSGD, self).__setstate__(state)
 
-        
+class OmegaSgd(optim.SGD):
+    def __init__(self, params, lr=0.001, momentum=0, dampening=0, weight_decay=0, nesterov=False):
+        super(OmegaSgd, self).__init__(params, lr,
+                                       momentum, dampening, weight_decay, nesterov)
+
+    def __setstate__(self, state):
+        super(OmegaSgd, self).__setstate__(state)
+
     def step(self, reg_params, batch_index, batch_size, closure=None):
         loss = closure() if closure is not None else None
-        
+
         for group in self.param_groups:
             weight_decay = group['weight_decay']
             momentum = group['momentum']
             dampening = group['dampening']
             nesterov = group['nesterov']
-            
+
             for param in group['params']:
                 if param.grad is None:
                     continue
@@ -93,14 +95,15 @@ class OmegaSGD(optim.SGD):
                     param_dict = reg_params[param]
 
                     omega = param_dict['omega']
-                    
-                    current_size = (batch_index + 1) * batch_size 
-                    step_size = 1 / float(current_size) 
-                    
-                    omega = omega + step_size * (d_param_copy - batch_size * omega)
 
-                    param_dict['omega'] = omega 
+                    current_size = (batch_index + 1) * batch_size
+                    step_size = 1 / float(current_size)
+
+                    omega = omega + step_size * \
+                        (d_param_copy - batch_size * omega)
+
+                    param_dict['omega'] = omega
                     reg_params[param] = param_dict
 
         return loss
-                    
+

@@ -3,9 +3,9 @@ import torch.nn.functional as F
 from torch import nn
 
 
-class VAE(nn.Module):
+class Vae(nn.Module):
     def __init__(self):
-        super(VAE, self).__init__()
+        super(Vae, self).__init__()
 
         self.fc1 = nn.Linear(4096, 2048)
         self.fc2 = nn.Linear(2048, 1024)
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    vae = VAE().to(device=device)
+    vae = Vae().to(device=device)
     test = torch.randn(2, 4096, device=device)
 
     (x_mu, x_logvar), z_mu, z_logvar = vae(test)

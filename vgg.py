@@ -2,9 +2,9 @@ import torch
 from torch import nn
 
 
-class VGG19(nn.Module):
+class Vgg19(nn.Module):
     def __init__(self):
-        super(VGG19, self).__init__()
+        super(Vgg19, self).__init__()
 
         self.features = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=3, padding=1),
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     print(f"Using device: {device}")
 
     test = torch.randn(1, 3, 32, 32, device=device)
-    vgg = VGG19().to(device)
+    vgg = Vgg19().to(device)
 
     out = vgg(test)
     print(out.shape)

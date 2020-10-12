@@ -1,14 +1,13 @@
 import torch
 import mas
-from utils import empty
-from vae import VAE
-from vgg import VGG19
+from vae import Vae
+from vgg import Vgg19
 from torch import nn
 from torchvision.models.utils import load_state_dict_from_url
 
 
-class VICL(nn.Module):
-    def __init__(self, weigths):
+class Vicl(nn.Module):
+    def __init__(self, vgg_weigths):
         """
         Build the main model containing both the feature extractor and the 
         variational autoencoder.
@@ -19,12 +18,12 @@ class VICL(nn.Module):
 
         super(VICL, self).__init__()
 
-        self.extractor = VGG19()
-        self.vae = VAE()
+        self.extractor = Vgg19()
+        self.vae = Vae()
         self.reg_params = {}
 
         # Load pretained weights for the VGG
-        vgg19_state_dict = load_state_dict_from_url(weigths, progress=True)
+        vgg19_state_dict = load_state_dict_from_url(vgg_weigths, progress=True)
         missing, unexpected = self.extractor.load_state_dict(
             vgg19_state_dict, strict=False
         )
@@ -41,6 +40,7 @@ class VICL(nn.Module):
         """
         Forward step, goes to the feature extractor then to the variational autoencoder.
         """
+
         features = self.extractor(x)
         return self.vae(features)
 
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    vicl = VICL(weigths="https://download.pytorch.org/models/vgg19-dcbb9e9d.pth").to(
+    vicl = Vicl(weigths="https://download.pytorch.org/models/vgg19-dcbb9e9d.pth").to(
         device
     )
 
