@@ -1,5 +1,8 @@
 import torch
 import mas
+import math
+
+from utils import empty, cosine_distance
 from vae import Vae
 from vgg import Vgg19
 from torch import nn
@@ -21,6 +24,7 @@ class Vicl(nn.Module):
         self.extractor = Vgg19()
         self.vae = Vae()
         self.reg_params = {}
+        self.class_idents = {}
 
         # Load pretained weights for the VGG
         vgg19_state_dict = load_state_dict_from_url(vgg_weigths, progress=True)
@@ -43,6 +47,32 @@ class Vicl(nn.Module):
 
         features = self.extractor(x)
         return self.vae(features)
+
+    def predict(self, x):
+        """
+        Predict classes
+        """
+
+        _, z_mu, z_logvar = self(x)
+
+        device = self.device()
+        batch_size = x.size(0)
+        prediction = [None] * batch_size
+        min_distances = [math.inf] * batch_size
+
+        if empty(self.class_idents):
+            print(f"WARNING: No registered class identifiers")
+
+        for label, prototype in self.class_idents:
+            proto_mu, proto_logvar = prototype["mu"], prototype["logvar"]
+
+            proto_mu = proto_mu.repeat(batch_size, 1)
+            proto_logvar = proto_logvar.repeat(batch_size, 1)
+
+            mu_distances = cosine_distance(z_mu, proto_mu)
+            logvar_distances = cosine_distance(z_logvar, proto_logvar)
+
+        return predict
 
     def device(self):
         """
