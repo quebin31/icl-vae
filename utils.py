@@ -9,7 +9,7 @@ def empty(ls):
     return len(ls) == 0
 
 
-def cosine_distance(x1, x2, dim=0):
+def cosine_distance(x1, x2, dim=1):
     return 1.0 - F.cosine_similarity(x1, x2, dim=dim)
 
 
@@ -22,7 +22,7 @@ def loss_term_vae(x, x_mu, x_logvar, z_mu, z_logvar):
 
 
 def loss_term_cos(y, z_mu):
-    batch_size = y.shape[0]
+    batch_size = y.size(0)
 
     total = 0.0
     for _ in range(batch_size):
@@ -30,9 +30,8 @@ def loss_term_cos(y, z_mu):
         j = random.randrange(0, batch_size)
         while j == i:
             j = random.randrange(0, batch_size)
-        
-        sign = 1 if y[i] == y[j] else -1 
-        total += sign * cosine_distance(z_mu[i], z_mu[j])        
-    
+
+        sign = 1 if y[i] == y[j] else -1
+        total += sign * cosine_distance(z_mu[i], z_mu[j])
+
     return total
-    
