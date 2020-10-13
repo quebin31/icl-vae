@@ -63,4 +63,8 @@ def train(model: Vicl, task: int, epochs: int, dataloader_train: DataLoader, dat
     if task > 0:
         model._consolidate_reg_params()
 
+    # Save model for this task
+    save_path = os.path.join(os.getcwd(), "..", "models", f"vicl_task_{task}.pth")
+    model.save(save_path)
+
     return model
