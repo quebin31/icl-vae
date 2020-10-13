@@ -2,8 +2,8 @@
 
 import torch
 
+from modules.vicl import Vicl
 from torch import optim
-from vicl import Vicl
 from torch.utils.data import DataLoader
 
 
@@ -34,7 +34,7 @@ class LocalSgd(optim.SGD):
                 if param.grad is None:
                     continue
 
-                d_param = param.grad.data
+                d_param = param.grad
 
                 if param in reg_params:
                     param_dict = reg_params[param]
@@ -42,14 +42,14 @@ class LocalSgd(optim.SGD):
                     omega = param_dict['omega']
                     init_val = param_dict['init_val']
 
-                    param_diff = param.data - init_val
+                    param_diff = param - init_val
                     local_grad = torch.mul(
                         param_diff, 2 * self.reg_lambda * omega)
 
                     d_param.add_(local_grad)
 
                 if weight_decay != 0:
-                    d_param.add_(weight_decay, param.data)
+                    d_param.add_(weight_decay, param)
 
                 if momentum != 0:
                     param_state = self.state[param]
@@ -65,7 +65,7 @@ class LocalSgd(optim.SGD):
                     else:
                         d_param = buf
 
-                param.data.add_(-group['lr'], d_param)
+                param.add_(-group['lr'], d_param)
 
         return loss
 
@@ -92,7 +92,7 @@ class OmegaSgd(optim.SGD):
                     continue
 
                 if param in reg_params:
-                    d_param = param.grad.data
+                    d_param = param.grad
                     d_param_copy = d_param.clone().abs()
 
                     param_dict = reg_params[param]

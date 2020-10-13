@@ -1,12 +1,11 @@
 import torch
-import mas
 import math
 
-from utils import empty, cosine_distance
-from vae import Vae
-from vgg import Vgg19
+from modules.vae import Vae
+from modules.vgg import Vgg19
 from torch import nn
 from torchvision.models.utils import load_state_dict_from_url
+from utils import empty, cosine_distance
 
 
 class Vicl(nn.Module):
@@ -48,12 +47,14 @@ class Vicl(nn.Module):
         features = self.extractor(x)
         return self.vae(features)
 
-    def predict(self, x):
+    def predict(self, x, z_mu=None, z_logvar=None):
         """
         Predict classes
         """
 
-        _, z_mu, z_logvar = self(x)
+        # Allows us to pass already computed z_mu and z_logvar
+        if z_mu is None and z_logvar is None:
+            _, z_mu, z_logvar = self(x)
 
         device = self.device()
         batch_size = x.size(0)
@@ -88,6 +89,24 @@ class Vicl(nn.Module):
         """
         return next(self.parameters()).device
 
+    def save(self, path: str):
+        torch.save({
+            "vae": self.vae.state_dict(),
+            "reg_params": self.reg_params,
+            "class_idents": self.class_idents,
+        }, path)
+
+    def load(self, path: str):
+        device = self.device()
+        saved = torch.load(path, map_location=self.device())
+
+        self.vae.load_state_dict(saved["vae"])
+        self.reg_params = saved["reg_params"]
+        self.class_idents = saved["class_idents"]
+
+    def learned_classes(self):
+        return list(self.class_idents.keys())
+
     def _init_reg_params_first_task(self, freeze=[]):
         """
         Initialize the omega values from MAS (initial task).
@@ -105,7 +124,7 @@ class Vicl(nn.Module):
 
             print(f"Initializing omega values for layer {name}")
             omega = torch.zeros(param.size(), device=device)
-            init_val = param.data.clone().to(device)
+            init_val = param.clone().to(device)
 
             # Omega is initialized to zero on first task
             param_dict = {
@@ -138,7 +157,7 @@ class Vicl(nn.Module):
             prev_omega = reg_params["omega"]
 
             new_omega = torch.zeros(param.size(), device=device)
-            init_val = param.data.clone().to(device)
+            init_val = param.clone().to(device)
 
             param_dict["prev_omega"] = prev_omega
             param_dict["omega"] = new_omega

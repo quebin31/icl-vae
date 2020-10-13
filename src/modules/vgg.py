@@ -1,6 +1,6 @@
 import torch
-from torch import nn
 
+from torch import nn
 
 class Vgg19(nn.Module):
     def __init__(self):
