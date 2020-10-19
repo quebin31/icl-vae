@@ -1,6 +1,8 @@
 import random
 import torch
 import torch.nn.functional as F
+import sys
+from torch.utils.data import Dataset
 
 LOG_2_PI = 1.8378770664093453
 
@@ -57,11 +59,41 @@ def loss_term_cos(y, z_mu):
 
 def model_criterion(x, y, x_mu, x_logvar, z_mu, z_logvar, vae_reg=1.0, cos_reg=1.0):
     """
-    Compute the whole loss term (aka model criterion), note that here isn't 
+    Compute the whole loss term (aka model criterion), note that here isn't
     included the mas term loss (it's already included in `LocalSgd`)
     """
 
     term_vae = loss_term_vae(x, x_mu, x_logvar, z_mu, z_logvar)
     term_cos = loss_term_cos(y, z_mu)
 
-    return vae_reg * term_vae + cos_reg * term_cos
+    return (vae_reg * term_vae) + (cos_reg * term_cos)
+
+
+def split_classes_in_tasks(dataset: Dataset):
+    label_indices = {}
+
+    for idx, (_, label) in enumerate(dataset):
+        label_indices.setdefault(label, []).append(idx)
+
+    labels = list(label_indices.keys())
+    labels.sort()
+
+    mid = len(labels) // 2
+    tasks_indices = [[]]
+
+    for i in range(0, mid):
+        tasks_indices[0] += label_indices[labels[i]]
+
+    for i in range(mid, len(labels)):
+        tasks_indices.append(label_indices[labels[i]])
+
+    return tasks_indices
+
+
+if __name__ == "__main__":
+    from torchvision.datasets import MNIST
+    from torchvision import transforms
+
+    t = transforms.ToTensor()
+    d = MNIST(root="./data", train=True, download=True, transform=t)
+    t = split_classes_in_tasks(d)
