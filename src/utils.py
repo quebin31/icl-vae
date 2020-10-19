@@ -22,15 +22,17 @@ def cosine_distance(x1, x2, dim=1):
 
 def loss_term_vae(x, x_mu, x_logvar, z_mu, z_logvar):
     """
-    Compute the vae term from the loss function, it's already calculated 
-    to be minimized. 
+    Compute the vae term from the loss function, it's already calculated
+    to be minimized.
     """
 
-    # negative log likelihood
-    LGP = LOG_2_PI + x_logvar + (x - x_mu) ** 2 / (2 * torch.exp(x_logvar))
-    KLD = -0.5 * torch.sum(1 + z_logvar - z_mu.pow(2) - z_logvar.exp())
+    LGP = -torch.sum((-0.5 * LOG_2_PI) + (-0.5 * x_logvar) +
+                     (-0.5 * (x - x_mu).pow(2) / (x_logvar.exp())), dim=1).mean(dim=0)
 
-    return KLD + LGP
+    KLD = -0.5 * torch.sum(1 + z_logvar - z_mu.pow(2) -
+                           z_logvar.exp(), dim=1)
+
+    return (KLD + LGP).mean()
 
 
 def loss_term_cos(y, z_mu):
