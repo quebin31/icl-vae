@@ -33,9 +33,16 @@ class Vae(nn.Module):
         return self.fc6_mu(z), self.fc6_lv(z)
 
     def forward(self, x):
-        mu, logvar = self.encode(x)
-        z = self.reparameterize(mu, logvar)
-        return self.decode(z), mu, logvar
+        z_mu, z_logvar = self.encode(x)
+        z = self.reparameterize(z_mu, z_logvar)
+        x_mu, x_logvar = self.decode(z)
+
+        return {
+            "z_mu": z_mu,
+            "z_logvar": z_logvar,
+            "x_mu": x_mu,
+            "x_logvar": x_logvar,
+        }
 
 
 if __name__ == "__main__":
@@ -45,8 +52,8 @@ if __name__ == "__main__":
     vae = Vae().to(device=device)
     test = torch.randn(2, 4096, device=device)
 
-    (x_mu, x_logvar), z_mu, z_logvar = vae(test)
-    print(x_mu.shape)
-    print(x_logvar.shape)
-    print(z_mu.shape)
-    print(z_logvar.shape)
+    output = vae(test)
+    print(output["x_mu"].shape)
+    print(output["x_logvar"].shape)
+    print(output["z_mu"].shape)
+    print(output["z_logvar"].shape)
