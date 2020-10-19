@@ -45,7 +45,9 @@ class Vicl(nn.Module):
         """
 
         features = self.extractor(x)
-        return self.vae(features)
+        vae_output = self.vae(features)
+
+        return {"features": features, **vae_output}
 
     def predict(self, x, z_mu=None, z_logvar=None):
         """
@@ -54,7 +56,8 @@ class Vicl(nn.Module):
 
         # Allows us to pass already computed z_mu and z_logvar
         if z_mu is None and z_logvar is None:
-            _, z_mu, z_logvar = self(x)
+            output = self(x)
+            z_mu, z_logvar = output["z_mu"], output["z_logvar"]
 
         device = self.device()
         batch_size = x.size(0)
