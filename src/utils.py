@@ -50,7 +50,7 @@ def loss_term_cos(y, z_mu):
             j = random.randrange(0, batch_size)
 
         sign = 1 if y[i] == y[j] else -1
-        total += sign * cosine_distance(z_mu[i], z_mu[j])
+        total += sign * cosine_distance(z_mu[i], z_mu[j], dim=0)
 
     return total
 
