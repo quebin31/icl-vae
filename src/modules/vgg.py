@@ -2,6 +2,7 @@ import torch
 
 from torch import nn
 
+
 class Vgg19(nn.Module):
     def __init__(self):
         super(Vgg19, self).__init__()
@@ -42,5 +43,6 @@ if __name__ == "__main__":
     test = torch.randn(1, 3, 32, 32, device=device)
     vgg = Vgg19().to(device)
 
+    vgg.eval()
     out = vgg(test)
-    print(out.shape)
+    print(out.size())
