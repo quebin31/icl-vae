@@ -21,51 +21,54 @@ class LocalSgd(optim.SGD):
     def __setstate__(self, state):
         super(LocalSgd, self).__setstate__(state)
 
+    @torch.no_grad()
     def step(self, reg_params, closure=None):
-        loss = closure() if closure is not None else None
+        loss = None
+        if closure is not None:
+            with torch.enable_grad():
+                loss = closure()
 
         for group in self.param_groups:
-            weight_decay = group['weight_decay']
-            momentum = group['momentum']
-            dampening = group['dampening']
-            nesterov = group['nesterov']
+            weight_decay = group["weight_decay"]
+            momentum = group["momentum"]
+            dampening = group["dampening"]
+            nesterov = group["nesterov"]
 
-            for param in self.param_names:
-                if param.grad is None:
+            for p in group["params"]:
+                if p.grad is None:
                     continue
 
-                d_param = param.grad
+                d_p = p.grad
 
-                if param in reg_params:
-                    param_dict = reg_params[param]
+                if p in reg_params:
+                    param_dict = reg_params[p]
 
-                    omega = param_dict['omega']
-                    init_val = param_dict['init_val']
+                    omega = param_dict["omega"]
+                    init_val = param_dict["init_val"]
 
-                    param_diff = param - init_val
                     local_grad = torch.mul(
-                        param_diff, 2 * self.reg_lambda * omega)
+                        2 * self.reg_lambda * omega, p - init_val)
 
-                    d_param.add_(local_grad)
+                    d_p = d_p.add(local_grad)
 
                 if weight_decay != 0:
-                    d_param.add_(weight_decay, param)
+                    d_p = d_p.add(p, alpha=weight_decay)
 
                 if momentum != 0:
-                    param_state = self.state[param]
-                    if 'momentum_buffer' not in param_state:
-                        buf = param_state['momentum_buffer'] = torch.clone(
-                            d_param).detach()
+                    param_state = self.state[p]
+                    if "momentum_buffer" not in param_state:
+                        buf = param_state["momentum_buffer"] = torch.clone(
+                            d_p).detach()
                     else:
-                        buf = param_state['momentum_buffer']
-                        buf.mul_(momentum).add_(1 - dampening, d_p)
+                        buf = param_state["momentum_buffer"]
+                        buf.mul_(momentum).add_(d_p, alpha=1 - dampening)
 
                     if nesterov:
-                        d_param.add_(momentum, buf)
+                        d_p = d_p.add(buf, alpha=momentum)
                     else:
-                        d_param = buf
+                        d_p = buf
 
-                param.add_(-group['lr'], d_param)
+                p.add_(d_p, alpha=-group["lr"])
 
         return loss
 
@@ -78,6 +81,7 @@ class OmegaSgd(optim.SGD):
     def __setstate__(self, state):
         super(OmegaSgd, self).__setstate__(state)
 
+    @torch.no_grad()
     def step(self, reg_params, batch_index: int, batch_size: int, closure=None):
         loss = closure() if closure is not None else None
 
