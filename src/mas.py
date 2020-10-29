@@ -124,8 +124,10 @@ def compute_omega_grads_norm(model: Vicl, dataloader: DataLoader, optimizer: Ome
 
         optimizer.zero_grad()
 
-        (x_mu, x_logvar), z_mu, z_logvar = model(inputs)
-
+        output = model(inputs)
+        x_mu, x_logvar = output["x_mu"], output["x_logvar"]
+        #z_mu, z_logvar = output["z_mu"], output["z_logvar"]
+    
         l2_norm = torch.norm(x_mu + x_logvar, 2, dim=1) ** 2
         l2_norm = torch.sum(l2_norm)
         l2_norm.backward()

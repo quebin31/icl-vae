@@ -99,7 +99,8 @@ def train(model: Vicl, dataset_train: Dataset, dataset_test: Dataset, task: int,
         data = data.to(device)
         labels = labels.to(device)
 
-        _, z_mu, z_logvar = model(data)
+        output = model(data)
+        z_mu, z_logvar = output["z_mu"], output["z_logvar"]
 
         # Sum the "mu" and "logvar" values, also count the total for each label
         for i in range(0, labels.size(0)):
