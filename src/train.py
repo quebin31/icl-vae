@@ -91,6 +91,7 @@ def train(model: Vicl, dataset_train: Dataset, dataset_test: Dataset, task: int,
     if task > 0:
         model._consolidate_reg_params()
 
+    print(f"Learning classes...")
     # Actually "learn" the new class(es)
     model.eval()
     label_total = {}
@@ -127,6 +128,7 @@ def train(model: Vicl, dataset_train: Dataset, dataset_test: Dataset, task: int,
     local_path = os.path.join(model_path, f"vicl_task_{task}.pt")
     wandb_path = os.path.join(wandb.run.dir, f"vicl_task_{task}.pt")
 
+    print(f"Saving model")
     model.save(local_path)
     model.save(wandb_path)
 
