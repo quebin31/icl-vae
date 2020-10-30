@@ -77,7 +77,7 @@ def train(model: Vicl, dataset_train: Dataset, dataset_test: Dataset, task: int,
                 f"\r:: ({batch_idx + 1}/{num_batches}) Loss: {mean_loss:.4f}", end="")
 
             if batch_idx % log_interval == 0:
-                wandb.log({"Loss": mean_loss})
+                wandb.log({f"Loss for Task {task}": mean_loss})
 
         print()
         moptim_scheduler.step()
