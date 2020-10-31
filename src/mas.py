@@ -117,6 +117,7 @@ class OmegaSgd(optim.SGD):
 
 def compute_omega_grads_norm(model: Vicl, dataloader: DataLoader, optimizer: OmegaSgd):
     device = model.device()
+    num_batches = len(dataloader)
 
     for index, batch in enumerate(dataloader):
         inputs, labels = batch
@@ -126,8 +127,7 @@ def compute_omega_grads_norm(model: Vicl, dataloader: DataLoader, optimizer: Ome
 
         output = model(inputs)
         x_mu, x_logvar = output["x_mu"], output["x_logvar"]
-        #z_mu, z_logvar = output["z_mu"], output["z_logvar"]
-    
+
         l2_norm = torch.norm(x_mu + x_logvar, 2, dim=1) ** 2
         l2_norm = torch.sum(l2_norm)
         l2_norm.backward()
@@ -135,4 +135,7 @@ def compute_omega_grads_norm(model: Vicl, dataloader: DataLoader, optimizer: Ome
         optimizer.step(model.reg_params, batch_index=index,
                        batch_size=inputs.size(0))
 
+        print(f":: {index + 1}/{num_batches}\r", end="")
+
+    print()
     return model
