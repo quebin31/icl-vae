@@ -117,7 +117,8 @@ def train(model: Vicl, dataset_train: Dataset, dataset_test: Dataset, task: int,
 
     # Divide by the total of each label
     for label, total in label_total.items():
-        model.class_idents[label] /= total
+        model.class_idents[label]["mu"] /= total
+        model.class_idents[label]["logvar"] /= total
 
     # Create dir to save models
     model_path = os.path.join(os.getcwd(), "models")
