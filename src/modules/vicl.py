@@ -123,8 +123,7 @@ class Vicl(nn.Module):
         reg_params = {}
 
         halo = Halo(text='Initializing omega values (first task)',
-                    spinner='dots')
-        halo.start()
+                    spinner='dots').start()
         for name, param in self.vae.named_parameters():
             if name in freeze:
                 continue
@@ -155,8 +154,7 @@ class Vicl(nn.Module):
         reg_params = self.reg_params
 
         halo = Halo(text='Initializing omega values (subseq task)',
-                    spinner='dots')
-        halo.start()
+                    spinner='dots').start()
         for name, param in self.vae.named_parameters():
             if name in freeze or param not in reg_params:
                 continue
@@ -186,8 +184,7 @@ class Vicl(nn.Module):
         reg_params = self.reg_params
 
         halo = Halo(text='Consolidating omega values',
-                    spinner='dots')
-        halo.start()
+                    spinner='dots').start()
         for name, param in self.vae.named_parameters():
             if param not in reg_params:
                 continue
