@@ -38,22 +38,22 @@ class Vae(nn.Module):
         x_mu, x_logvar = self.decode(z)
 
         return {
-            "z_mu": z_mu,
-            "z_logvar": z_logvar,
-            "x_mu": x_mu,
-            "x_logvar": x_logvar,
+            'z_mu': z_mu,
+            'z_logvar': z_logvar,
+            'x_mu': x_mu,
+            'x_logvar': x_logvar,
         }
 
 
-if __name__ == "__main__":
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+if __name__ == '__main__':
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f'Using device: {device}')
 
     vae = Vae().to(device=device)
     test = torch.randn(2, 4096, device=device)
 
     output = vae(test)
-    print(output["x_mu"].shape)
-    print(output["x_logvar"].shape)
-    print(output["z_mu"].shape)
-    print(output["z_logvar"].shape)
+    print(output['x_mu'].shape)
+    print(output['x_logvar'].shape)
+    print(output['z_mu'].shape)
+    print(output['z_logvar'].shape)

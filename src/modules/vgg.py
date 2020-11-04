@@ -36,9 +36,9 @@ class Vgg19(nn.Module):
             return torch.flatten(features, start_dim=1)
 
 
-if __name__ == "__main__":
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+if __name__ == '__main__':
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f'Using device: {device}')
 
     test = torch.randn(1, 3, 32, 32, device=device)
     vgg = Vgg19().to(device)
