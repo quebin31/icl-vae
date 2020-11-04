@@ -92,16 +92,15 @@ class Vicl(nn.Module):
         """
         return next(self.parameters()).device
 
-    def save(self, path: str):
+    def save(self, file_or_path: str):
         torch.save({
             "vae": self.vae.state_dict(),
             "reg_params": self.reg_params,
             "class_idents": self.class_idents,
-        }, path)
+        }, file_or_path)
 
-    def load(self, path: str):
-        device = self.device()
-        saved = torch.load(path, map_location=self.device())
+    def load(self, file_or_path):
+        saved = torch.load(file_or_path, map_location=self.device())
 
         self.vae.load_state_dict(saved["vae"])
         self.reg_params = saved["reg_params"]
