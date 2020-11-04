@@ -14,12 +14,14 @@ from argparse import Namespace
 
 
 def valid_args(args: Namespace):
-    valid = True
+    valid = args.train or args.test
+    if not valid:
+        print('error: --train and/or --test should be provided')
 
     if args.train:
         check = {
-            'batch': args.batch_size,
             'lr': args.lr,
+            'batch': args.batch,
             'rlambda': args.rlambda,
             'epochs': args.epochs,
             'task': args.task,
@@ -27,29 +29,29 @@ def valid_args(args: Namespace):
 
         for arg, val in check.items():
             if val is None:
-                print(f'--{arg} is required if using --train')
+                print(f'error: --{arg} is required if using --train')
                 valid = False
-
-        args.seed = args.seed or random.randint(0, 500)
 
         if args.task != 0:
             if args.run_id is None:
                 print(
-                    '--run-id is required if using --train with --task different from 0')
+                    'error: --run-id is required if using --train with --task different from 0')
                 valid = False
 
     if args.test and not args.train:
         check = {
-            'batch': args.batch_size,
+            'batch': args.batch,
             'task': args.task,
             'run-id': args.run_id,
         }
 
         for arg, val in check.items():
             if val is None:
-                print(f'--{arg} is required if using --test without --train')
+                print(
+                    f'error: --{arg} is required if using --test without --train')
                 valid = False
 
+    args.seed = args.seed or random.randint(0, 500)
     return valid
 
 
@@ -70,8 +72,9 @@ args = parser.parse_args()
 if not valid_args(args):
     exit(1)
 
-wandb.init(project='icl-vae', id=args.run_id)
-wandb.config.update(args)
+wandb.init(project='icl-vae', entity='kdelcastillo',
+           resume=args.run_id if args.run_id else False)
+wandb.config.update(args, allow_val_change=True)
 
 random.seed(args.seed)
 torch.manual_seed(args.seed)
@@ -98,7 +101,7 @@ if config.train:
 
     wandb.watch(model)
     model = train.train(model, data_train, task=config.task, epochs=config.epochs,
-                        batch_size=config.batch_size, lr=config.learning_rate, reg_lambda=config.rlambda, log_interval=50)
+                        batch_size=config.batch, lr=config.lr, reg_lambda=config.rlambda, log_interval=50)
 
 if config.test:
     if not config.train:
