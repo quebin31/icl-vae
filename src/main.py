@@ -1,5 +1,6 @@
 import os
 import train
+import test
 import torch
 import wandb
 import argparse
@@ -109,3 +110,6 @@ if config.test:
 
     data_test = CIFAR100(root='./data', train=False,
                          download=True, transform=transforms)
+
+    model = test.test(model, data_test, task=config.task,
+                      batch_size=config.batch, )
