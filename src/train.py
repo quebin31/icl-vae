@@ -6,28 +6,10 @@ from mas import LocalSgd, OmegaSgd, compute_omega_grads_norm
 from modules.vicl import Vicl
 from torch.utils.data import DataLoader, Dataset, Subset
 from torch.optim.lr_scheduler import ExponentialLR
-from utils import model_criterion, split_classes_in_tasks
+from utils import model_criterion, create_data_loader
 
 
-def create_data_loaders(dataset_train: Dataset, dataset_test: Dataset, task: int, batch_size: int, num_workers: int = 6):
-    train_tasks = split_classes_in_tasks(dataset_train)
-    test_tasks = split_classes_in_tasks(dataset_test)
-
-    assert len(train_tasks) == len(test_tasks)
-
-    print(f"Total of tasks: {len(train_tasks)}")
-    train_subset = Subset(dataset_train, train_tasks[task])
-    test_subset = Subset(dataset_test, train_tasks[task])
-
-    dataloader_train = DataLoader(
-        train_subset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    dataloader_test = DataLoader(
-        test_subset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-
-    return dataloader_train, dataloader_test
-
-
-def train(model: Vicl, dataset_train: Dataset, dataset_test: Dataset, task: int, epochs: int, batch_size: int, lr=0.000003, reg_lambda=0.01, log_interval=100):
+def train(model: Vicl, dataset: Dataset, task: int, epochs: int, batch_size: int, lr: float = 0.000003, reg_lambda: float = 0.01, log_interval: int = 100):
     # Init regularizer params (omega values) according to the task number
     if task == 0:
         model._init_reg_params_first_task()
@@ -43,16 +25,15 @@ def train(model: Vicl, dataset_train: Dataset, dataset_test: Dataset, task: int,
     moptim_scheduler = ExponentialLR(model_optimizer, gamma=0.7)
 
     # Create the data loaders
-    dataloader_train, dataloader_test = create_data_loaders(
-        dataset_train, dataset_test, task=task, batch_size=batch_size)
-    num_batches = len(dataloader_train)
+    dataloader = create_data_loader(dataset, task=task, batch_size=batch_size)
+    num_batches = len(dataloader)
 
     # Start training the model
     for epoch in range(0, epochs):
         total_loss = 0.0
 
         print(f"Epoch {epoch + 1}/{epochs}:")
-        for batch_idx, batch in enumerate(dataloader_train):
+        for batch_idx, batch in enumerate(dataloader):
             data, labels = batch
             data = data.to(device)
             labels = labels.to(device)
@@ -85,17 +66,17 @@ def train(model: Vicl, dataset_train: Dataset, dataset_test: Dataset, task: int,
     # After training the model for this task update the omega values
     print(f"Updating omega values for this task")
     omega_optimizer = OmegaSgd(model.reg_params)
-    model = compute_omega_grads_norm(model, dataloader_train, omega_optimizer)
+    model = compute_omega_grads_norm(model, dataloader, omega_optimizer)
 
     # Subsequent tasks must consolidate the omega values
     if task > 0:
         model._consolidate_reg_params()
 
-    print(f"Learning classes...")
     # Actually "learn" the new class(es)
+    print(f"Learning classes...")
     model.eval()
     label_total = {}
-    for batch in dataloader_train:
+    for batch in dataloader:
         data, labels = batch
         data = data.to(device)
         labels = labels.to(device)
@@ -120,17 +101,10 @@ def train(model: Vicl, dataset_train: Dataset, dataset_test: Dataset, task: int,
         model.class_idents[label]["mu"] /= total
         model.class_idents[label]["logvar"] /= total
 
-    # Create dir to save models
-    model_path = os.path.join(os.getcwd(), "models")
-    if task == 0 and not os.path.isdir(model_path):
-        os.mkdir(model_path)
-
     # Save the model locally and to wandb
-    local_path = os.path.join(model_path, f"vicl_task_{task}.pt")
     wandb_path = os.path.join(wandb.run.dir, f"vicl_task_{task}.pt")
 
     print(f"Saving model")
-    model.save(local_path)
     model.save(wandb_path)
 
     return model

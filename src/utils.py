@@ -2,7 +2,8 @@ import random
 import torch
 import torch.nn.functional as F
 import sys
-from torch.utils.data import Dataset
+
+from torch.utils.data import Dataset, DataLoader, Subset
 
 LOG_2_PI = 1.8378770664093453
 
@@ -88,6 +89,17 @@ def split_classes_in_tasks(dataset: Dataset):
         tasks_indices.append(label_indices[labels[i]])
 
     return tasks_indices
+
+
+def create_data_loader(dataset: Dataset, task: int, batch_size: int, num_workers: int = 6):
+    tasks = split_classes_in_tasks(dataset)
+    print(f'Total of tasks: {len(tasks)}')
+
+    subset = Subset(dataset, tasks[task])
+    dataloader = DataLoader(subset, batch_size=batch_size,
+                            shuffle=True, num_workers=num_workers)
+
+    return dataloader
 
 
 if __name__ == "__main__":
