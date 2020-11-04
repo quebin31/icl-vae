@@ -5,6 +5,7 @@ import torch
 from modules.vicl import Vicl
 from torch import optim
 from torch.utils.data import DataLoader
+from halo import Halo
 
 
 class LocalSgd(optim.SGD):
@@ -29,12 +30,12 @@ class LocalSgd(optim.SGD):
                 loss = closure()
 
         for group in self.param_groups:
-            weight_decay = group["weight_decay"]
-            momentum = group["momentum"]
-            dampening = group["dampening"]
-            nesterov = group["nesterov"]
+            weight_decay = group['weight_decay']
+            momentum = group['momentum']
+            dampening = group['dampening']
+            nesterov = group['nesterov']
 
-            for p in group["params"]:
+            for p in group['params']:
                 if p.grad is None:
                     continue
 
@@ -43,8 +44,8 @@ class LocalSgd(optim.SGD):
                 if p in reg_params:
                     param_dict = reg_params[p]
 
-                    omega = param_dict["omega"]
-                    init_val = param_dict["init_val"]
+                    omega = param_dict['omega']
+                    init_val = param_dict['init_val']
 
                     local_grad = torch.mul(
                         2 * self.reg_lambda * omega, p - init_val)
@@ -56,11 +57,11 @@ class LocalSgd(optim.SGD):
 
                 if momentum != 0:
                     param_state = self.state[p]
-                    if "momentum_buffer" not in param_state:
-                        buf = param_state["momentum_buffer"] = torch.clone(
+                    if 'momentum_buffer' not in param_state:
+                        buf = param_state['momentum_buffer'] = torch.clone(
                             d_p).detach()
                     else:
-                        buf = param_state["momentum_buffer"]
+                        buf = param_state['momentum_buffer']
                         buf.mul_(momentum).add_(d_p, alpha=1 - dampening)
 
                     if nesterov:
@@ -68,7 +69,7 @@ class LocalSgd(optim.SGD):
                     else:
                         d_p = buf
 
-                p.add_(d_p, alpha=-group["lr"])
+                p.add_(d_p, alpha=-group['lr'])
 
         return loss
 
@@ -119,14 +120,17 @@ def compute_omega_grads_norm(model: Vicl, dataloader: DataLoader, optimizer: Ome
     device = model.device()
     num_batches = len(dataloader)
 
+    halo = Halo(text='Computing omega grads (norm output)',
+                spinner='dots').start()
     for index, batch in enumerate(dataloader):
+        halo.text = f'Computing omega grads (norm output): {index + 1}/{num_batches}'
         inputs, labels = batch
         inputs, labels = inputs.to(device), labels.to(device)
 
         optimizer.zero_grad()
 
         output = model(inputs)
-        x_mu, x_logvar = output["x_mu"], output["x_logvar"]
+        x_mu, x_logvar = output['x_mu'], output['x_logvar']
 
         l2_norm = torch.norm(x_mu + x_logvar, 2, dim=1) ** 2
         l2_norm = torch.sum(l2_norm)
@@ -135,7 +139,5 @@ def compute_omega_grads_norm(model: Vicl, dataloader: DataLoader, optimizer: Ome
         optimizer.step(model.reg_params, batch_index=index,
                        batch_size=inputs.size(0))
 
-        print(f":: {index + 1}/{num_batches}\r", end="")
-
-    print()
+    halo.succeed()
     return model

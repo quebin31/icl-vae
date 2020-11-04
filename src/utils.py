@@ -93,8 +93,6 @@ def split_classes_in_tasks(dataset: Dataset):
 
 def create_data_loader(dataset: Dataset, task: int, batch_size: int, num_workers: int = 6):
     tasks = split_classes_in_tasks(dataset)
-    print(f'Total of tasks: {len(tasks)}')
-
     subset = Subset(dataset, tasks[task])
     dataloader = DataLoader(subset, batch_size=batch_size,
                             shuffle=True, num_workers=num_workers)
@@ -102,10 +100,10 @@ def create_data_loader(dataset: Dataset, task: int, batch_size: int, num_workers
     return dataloader
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     from torchvision.datasets import MNIST
     from torchvision import transforms
 
     t = transforms.ToTensor()
-    d = MNIST(root="./data", train=True, download=True, transform=t)
+    d = MNIST(root='./data', train=True, download=True, transform=t)
     t = split_classes_in_tasks(d)
