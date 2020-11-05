@@ -15,7 +15,7 @@ def empty(ls):
     return len(ls) == 0
 
 
-def cosine_distance(x1, x2, dim=1):
+def cosine_distance(x1, x2, dim = 1):
     """
     Compute the cosine distance between `x1` and `x2`, the `dim` param
     by default is 1 (due to batches)
@@ -38,7 +38,7 @@ def loss_term_vae(x, x_mu, x_logvar, z_mu, z_logvar):
     return (KLD + LGP).mean()
 
 
-def loss_term_cos(y, z_mu):
+def loss_term_cos(y, z_mu, z_logvar):
     """
     Compute the cos term from the loss function
     """
@@ -53,21 +53,23 @@ def loss_term_cos(y, z_mu):
             j = random.randrange(0, batch_size)
 
         sign = 1 if y[i] == y[j] else -1
-        total += sign * cosine_distance(z_mu[i], z_mu[j], dim=0)
+        total += sign * \
+            (cosine_distance(z_mu[i], z_mu[j], dim=0) +
+             cosine_distance(z_logvar[i], z_logvar[j], dim=0))
 
     return total
 
 
-def model_criterion(x, y, x_mu, x_logvar, z_mu, z_logvar, vae_reg=1.0, cos_reg=1.0):
+def model_criterion(x, y, x_mu, x_logvar, z_mu, z_logvar, lambda_vae = 1.0, lambda_cos = 1.0):
     """
     Compute the whole loss term (aka model criterion), note that here isn't
     included the mas term loss (it's already included in `LocalSgd`)
     """
 
     term_vae = loss_term_vae(x, x_mu, x_logvar, z_mu, z_logvar)
-    term_cos = loss_term_cos(y, z_mu)
+    term_cos = loss_term_cos(y, z_mu, z_logvar)
 
-    return (vae_reg * term_vae) + (cos_reg * term_cos)
+    return (lambda_vae * term_vae) + (lambda_cos * term_cos)
 
 
 def split_classes_in_tasks(dataset: Dataset):
