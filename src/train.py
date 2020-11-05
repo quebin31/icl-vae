@@ -42,7 +42,7 @@ def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_schedul
         loss = checkpoint['loss']
         halo.succeed(f'Found a checkpoint (epoch: {epoch}, loss: {loss})')
     except:
-        halo.error('No checkpoints found for this run')
+        halo.fail('No checkpoints found for this run')
 
     return epoch, loss
 
@@ -107,7 +107,7 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
                 wandb.log({f'Loss for Task {task}': mean_loss})
 
         halo.succeed()
-        if (epoch + 1) % hyper.decay_every == 0:
+        if hyper.decay_every != 0 and ((epoch + 1) % hyper.decay_every) == 0:
             moptim_scheduler.step()
 
         save_checkpoint(model, model_optimizer, moptim_scheduler,
