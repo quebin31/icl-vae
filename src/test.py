@@ -1,6 +1,7 @@
 import wandb
 
-from modules.vicl import vicl
+from modules.vicl import Vicl
+from torch.utils.data import Dataset
 from utils import create_data_loader
 from halo import Halo
 
