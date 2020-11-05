@@ -2,19 +2,58 @@ import os
 import torch
 import wandb
 
+from config import Config
+from halo import Halo
 from mas import LocalSgd, OmegaSgd, compute_omega_grads_norm
 from modules.vicl import Vicl
 from torch.utils.data import Dataset
 from torch.optim.lr_scheduler import ExponentialLR
 from utils import model_criterion, create_data_loader
-from halo import Halo
 
 
-def train(model: Vicl, dataset: Dataset, task: int, epochs: int, batch_size: int, lr: float = 0.000003, reg_lambda: float = 0.01, log_interval: int = 100):
+def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int, epoch: int, loss: float):
+    halo = Halo(
+        text=f'Saving checkpoint (epoch: {epoch}, loss: {loss})', spinner='dots').start()
+
+    torch.save({
+        'model': model.state(),
+        'model_optimizer': model_optimizer.state_dict(),
+        'moptim_scheduler': moptim_scheduler.state_dict(),
+        'epoch': epoch,
+        'loss': loss,
+    }, os.path.join(wandb.run.dir, f'vicl-task-{task}-checkpoint.pt'))
+
+    halo.stop()
+
+
+def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int):
+    epoch = 0
+    loss = 0.0
+
+    halo = Halo(text='Trying to load a checkpoint', spinner='dots').start()
+    try:
+        checkpoint = torch.load(wandb.restore(
+            f'vicl-task-{task}-checkpoint.pt'), map_location=model.device())
+        model.load_state(checkpoint['model'])
+        model_optimizer.load_state_dict(checkpoint['model_optimizer'])
+        moptim_scheduler.load_state_dict(checkpoint['moptim_scheduler'])
+
+        epoch = checkpoint['epoch']
+        loss = checkpoint['loss']
+        halo.succeed(f'Found a checkpoint (epoch: {epoch}, loss: {loss})')
+    except:
+        halo.error('No checkpoints found for this run')
+
+    return epoch, loss
+
+
+def train(model: Vicl, dataset: Dataset, task: int, config: Config):
     # Init regularizer params (omega values) according to the task number
     if task == 0:
+        hyper = config.base
         model._init_reg_params_first_task()
     else:
+        hyper = config.incr
         model._init_reg_params_subseq_tasks()
 
     # Get the device we are going to use
@@ -22,18 +61,25 @@ def train(model: Vicl, dataset: Dataset, task: int, epochs: int, batch_size: int
 
     # We're training our model
     model.vae.train()
-    model_optimizer = LocalSgd(model.vae.parameters(), reg_lambda, lr=lr)
-    moptim_scheduler = ExponentialLR(model_optimizer, gamma=0.7)
+
+    model_optimizer = LocalSgd(
+        model.vae.parameters(), hyper.lambda_reg, lr=hyper.learning_rate)
+    moptim_scheduler = ExponentialLR(model_optimizer, gamma=hyper.decay_rate)
 
     # Create the data loaders
-    dataloader = create_data_loader(dataset, task=task, batch_size=batch_size)
+    dataloader = create_data_loader(
+        dataset, task=task, batch_size=hyper.batch_size)
     num_batches = len(dataloader)
 
-    # Start training the model
-    for epoch in range(0, epochs):
-        total_loss = 0.0
+    # Try to load state dict from checkpoints
+    epoch, loss = maybe_load_checkpoint(
+        model, model_optimizer, moptim_scheduler, task=task)
 
-        prefix = f'Epoch {epoch + 1}/{epochs}'
+    # Start training the model
+    for epoch in range(epoch, hyper.epochs):
+        total_loss = loss
+
+        prefix = f'Epoch {epoch + 1}/{hyper.epochs}'
         halo = Halo(text=prefix, spinner='dots').start()
         for batch_idx, batch in enumerate(dataloader):
             data, labels = batch
@@ -48,7 +94,7 @@ def train(model: Vicl, dataset: Dataset, task: int, epochs: int, batch_size: int
             z_mu, z_logvar = output['z_mu'], output['z_logvar']
 
             loss = model_criterion(
-                x_features, labels, x_mu, x_logvar, z_mu, z_logvar)
+                x_features, labels, x_mu, x_logvar, z_mu, z_logvar, lambda_vae=hyper.lambda_vae, lambda_cos=hyper.lambda_cos)
             loss.backward()
 
             model_optimizer.step(model.reg_params)
@@ -57,11 +103,15 @@ def train(model: Vicl, dataset: Dataset, task: int, epochs: int, batch_size: int
             mean_loss = total_loss / (batch_idx + 1)
 
             halo.text = f'{prefix} ({batch_idx + 1}/{num_batches}), Loss: {mean_loss:.4f}'
-            if batch_idx % log_interval == 0:
+            if batch_idx % config.log_interval == 0:
                 wandb.log({f'Loss for Task {task}': mean_loss})
 
         halo.succeed()
-        moptim_scheduler.step()
+        if (epoch + 1) % hyper.decay_every == 0:
+            moptim_scheduler.step()
+
+        save_checkpoint(model, model_optimizer, moptim_scheduler,
+                        epoch=epoch, loss=total_loss, task=task)
 
     # After training the model for this task update the omega values
     omega_optimizer = OmegaSgd(model.reg_params)
@@ -89,10 +139,10 @@ def train(model: Vicl, dataset: Dataset, task: int, epochs: int, batch_size: int
             label = labels[i].item()
 
             model.class_idents.setdefault(label, {}).setdefault(
-                'mu', torch.zeros(z_mu.size(1))).add_(z_mu[i])
+                'mu', torch.zeros(z_mu.size(1), device=device)).add_(z_mu[i])
 
             model.class_idents.setdefault(label, {}).setdefault(
-                'logvar', torch.zeros(z_logvar.size(1))).add_(z_logvar[i])
+                'logvar', torch.zeros(z_logvar.size(1), device=device)).add_(z_logvar[i])
 
             label_total[label] = label_total.get(label, 0) + 1
 
@@ -100,12 +150,10 @@ def train(model: Vicl, dataset: Dataset, task: int, epochs: int, batch_size: int
     for label, total in label_total.items():
         model.class_idents[label]['mu'] /= total
         model.class_idents[label]['logvar'] /= total
-    halo.succeed()
+    halo.succeed('Successfully learned new classes')
 
-    # Save the model locally and to wandb
-    wandb_path = os.path.join(wandb.run.dir, f'vicl_task_{task}.pt')
-
-    print(f'> Saving model')
-    model.save(wandb_path)
+    halo = Halo(text=f'Saving model for task {task}').start()
+    model.save(os.path.join(wandb.run.dir, f'vicl-task-{task}.pt'))
+    halo.succeed('Successfully saved model')
 
     return model
