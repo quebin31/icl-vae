@@ -49,9 +49,9 @@ wandb.init(project='icl-vae', entity='kdelcastillo',
            resume=args.run_id if args.run_id else False, config=config.to_dict())
 wandb.save('*.pt')
 
-random.seed(args.seed)
-torch.manual_seed(args.seed)
-torch.autograd.set_detect_anomaly(True)
+random.seed(config.seed)
+torch.manual_seed(config.seed)
+torch.autograd.set_detect_anomaly(False)
 
 transforms = transforms.Compose([transforms.ToTensor()])
 
@@ -65,16 +65,16 @@ if args.train:
     data_train = CIFAR100(root='./data', train=True,
                           download=True, transform=transforms)
 
-    if config.task != 0:
-        print(f'Loading previous task ({config.task - 1}) model for training')
-        model.load(wandb.restore(f'vicl_task_{config.task - 1}.pt'))
+    if args.task != 0:
+        print(f'Loading previous task ({args.task - 1}) model for training')
+        model.load(wandb.restore(f'vicl_task_{args.task - 1}.pt'))
 
     wandb.watch(model)
     model = train.train(model, data_train, task=args.task, config=config)
 
 if args.test:
     if not args.train:
-        model.load(wandb.restore(f'vicl-task-{config.task}.pt'))
+        model.load(wandb.restore(f'vicl-task-{args.task}.pt'))
 
     data_test = CIFAR100(root='./data', train=False,
                          download=True, transform=transforms)
