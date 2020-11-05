@@ -80,7 +80,7 @@ class Vicl(nn.Module):
             distances = mu_distances + logvar_distances
 
             for i in range(0, batch_size):
-                distance = distances[i].item()
+                distance = distances[i].cpu().item()
 
                 if distance < min_distances[i]:
                     min_distances[i] = distance
@@ -94,19 +94,24 @@ class Vicl(nn.Module):
         """
         return next(self.parameters()).device
 
-    def save(self, file_or_path: str):
-        torch.save({
+    def state(self):
+        return {
             'vae': self.vae.state_dict(),
             'reg_params': self.reg_params,
             'class_idents': self.class_idents,
-        }, file_or_path)
+        }
+
+    def load_state(self, state):
+        self.vae.load_state_dict(state['var'])
+        self.reg_params = state['reg_params']
+        self.class_idents = state['class_idents']
+
+    def save(self, file_or_path):
+        torch.save(self.state(), file_or_path)
 
     def load(self, file_or_path):
-        saved = torch.load(file_or_path, map_location=self.device())
-
-        self.vae.load_state_dict(saved['vae'])
-        self.reg_params = saved['reg_params']
-        self.class_idents = saved['class_idents']
+        state = torch.load(file_or_path, map_location=self.device())
+        self.load_state(state)
 
     def learned_classes(self):
         return list(self.class_idents.keys())
