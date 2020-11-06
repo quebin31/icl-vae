@@ -12,9 +12,6 @@ from utils import model_criterion, create_data_loader
 
 
 def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int, epoch: int, loss: float):
-    halo = Halo(
-        text=f'Saving checkpoint (epoch: {epoch}, loss: {loss})', spinner='dots').start()
-
     torch.save({
         'model': model.state(),
         'model_optimizer': model_optimizer.state_dict(),
@@ -22,8 +19,6 @@ def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: Ex
         'epoch': epoch,
         'loss': loss,
     }, os.path.join(wandb.run.dir, f'vicl-task-{task}-checkpoint.pt'))
-
-    halo.stop()
 
 
 def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int):
