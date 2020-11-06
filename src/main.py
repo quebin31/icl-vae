@@ -46,7 +46,7 @@ if not valid_args(args):
 
 config = Config.load(args.config)
 wandb.init(project='icl-vae', entity='kdelcastillo',
-           resume=args.run_id if args.run_id else False, config=config.to_dict())
+           resume=args.run_id if args.run_id else False, config=config.to_dict(), settings=wandb.Settings(symlink=False))
 wandb.save('*.pt')
 
 random.seed(config.seed)

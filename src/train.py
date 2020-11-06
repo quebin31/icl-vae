@@ -12,13 +12,15 @@ from utils import model_criterion, create_data_loader
 
 
 def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int, epoch: int, loss: float):
+    checkpoint = f'vicl-task-{task}-checkpoint.pt'
     torch.save({
         'model': model.state(),
         'model_optimizer': model_optimizer.state_dict(),
         'moptim_scheduler': moptim_scheduler.state_dict(),
         'epoch': epoch,
         'loss': loss,
-    }, os.path.join(wandb.run.dir, f'vicl-task-{task}-checkpoint.pt'))
+    }, os.path.join(wandb.run.dir, checkpoint))
+    wandb.save(checkpoint)
 
 
 def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int):
@@ -148,7 +150,9 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
     halo.succeed('Successfully learned new classes')
 
     halo = Halo(text=f'Saving model for task {task}').start()
-    model.save(os.path.join(wandb.run.dir, f'vicl-task-{task}.pt'))
+    model_name = f'vicl-task-{task}.pt'
+    model.save(os.path.join(wandb.run.dir, model_name))
+    wandb.save(model_name)
     halo.succeed('Successfully saved model')
 
     return model
