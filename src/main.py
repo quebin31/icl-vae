@@ -46,7 +46,7 @@ if not valid_args(args):
 
 config = Config.load(args.config)
 wandb.init(project='icl-vae', entity='kdelcastillo',
-           resume=args.run_id if args.run_id else False, config=config.to_dict(), settings=wandb.Settings(symlink=False))
+           resume=args.run_id if args.run_id else False, config=config.to_dict())
 wandb.save('*.pt')
 
 random.seed(config.seed)
@@ -74,7 +74,8 @@ if args.train:
 
 if args.test:
     if not args.train:
-        model.load(wandb.restore(f'vicl-task-{args.task}.pt'))
+        wandb.restore(f'vicl-task-{args.task}.pt')
+        model.load(os.path.join(wandb.run.dir, f'vicl-task-{args.task}.pt'))
 
     data_test = CIFAR100(root='./data', train=False,
                          download=True, transform=transforms)
