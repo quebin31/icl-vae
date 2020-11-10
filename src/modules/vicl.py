@@ -10,7 +10,7 @@ from halo import Halo
 
 
 class Vicl(nn.Module):
-    def __init__(self, vgg_weights: str):
+    def __init__(self, vgg_weights: str = 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth'):
         """
         Build the main model containing both the feature extractor and the 
         variational autoencoder.
@@ -102,7 +102,7 @@ class Vicl(nn.Module):
         }
 
     def load_state(self, state):
-        self.vae.load_state_dict(state['var'])
+        self.vae.load_state_dict(state['vae'])
         self.reg_params = state['reg_params']
         self.class_idents = state['class_idents']
 
@@ -213,8 +213,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Using device: {device}')
 
-    vicl = Vicl(
-        vgg_weigths='https://download.pytorch.org/models/vgg19-dcbb9e9d.pth')
+    vicl = Vicl()
     vicl = vicl.to(device)
 
     vicl.class_idents = {
