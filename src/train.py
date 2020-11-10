@@ -28,7 +28,8 @@ def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_schedul
     halo = Halo(text='Trying to load a checkpoint', spinner='dots').start()
     try:
         wandb.restore(f'vicl-task-{task}-checkpoint.pt')
-        checkpoint = torch.load(f'vicl-task-{task}-checkpoint.pt', map_location=model.device())
+        checkpoint = torch.load(os.path.join(
+            wandb.run.dir, f'vicl-task-{task}-checkpoint.pt'), map_location=model.device())
         model.load_state(checkpoint['model'])
         model_optimizer.load_state_dict(checkpoint['model_optimizer'])
         moptim_scheduler.load_state_dict(checkpoint['moptim_scheduler'])
@@ -36,8 +37,8 @@ def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_schedul
         epoch = checkpoint['epoch']
         loss = checkpoint['loss']
         halo.succeed(f'Found a checkpoint (epoch: {epoch}, loss: {loss})')
-    except:
-        halo.fail('No checkpoints found for this run')
+    except Exception as e:
+        halo.fail(f'No checkpoints found for this run: {e}')
 
     return epoch, loss
 

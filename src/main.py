@@ -67,7 +67,8 @@ if args.train:
 
     if args.task != 0:
         print(f'Loading previous task ({args.task - 1}) model for training')
-        model.load(wandb.restore(f'vicl_task_{args.task - 1}.pt'))
+        wandb.restore(f'vicl_task_{args.task - 1}.pt')
+        model.load(os.path.join(wandb.run.dir, f'vicl_task_{args.task - 1}.pt'))
 
     wandb.watch(model)
     model = train.train(model, data_train, task=args.task, config=config)
