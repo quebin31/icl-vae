@@ -12,13 +12,18 @@ from utils import model_criterion, create_data_loader
 
 
 def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int, epoch: int, loss: float):
-    torch.save({
+    checkpoint = {
         'model': model.state(),
         'model_optimizer': model_optimizer.state_dict(),
         'moptim_scheduler': moptim_scheduler.state_dict(),
-        'epoch': epoch,
         'loss': loss,
-    }, os.path.join(wandb.run.dir, f'vicl-task-{task}-checkpoint.pt'))
+        'epoch': epoch,
+    }
+
+    save_name = f'vicl-task-{task}-cp.pt'
+    save_path = os.path.join(wandb.run.dir, save_name)
+    torch.save(checkpoint, save_path)
+    wandb.save(save_name)
 
 
 def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int):
@@ -26,19 +31,20 @@ def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_schedul
     loss = 0.0
 
     halo = Halo(text='Trying to load a checkpoint', spinner='dots').start()
-    try:
-        wandb.restore(f'vicl-task-{task}-checkpoint.pt')
-        checkpoint = torch.load(os.path.join(
-            wandb.run.dir, f'vicl-task-{task}-checkpoint.pt'), map_location=model.device())
+
+    load_name = f'vicl-task-{task}-cp.pt'
+    handler = wandb.restore(load_name)
+    if handler:
+        checkpoint = torch.load(handler.name, map_location=model.device())
         model.load_state(checkpoint['model'])
         model_optimizer.load_state_dict(checkpoint['model_optimizer'])
         moptim_scheduler.load_state_dict(checkpoint['moptim_scheduler'])
 
-        epoch = checkpoint['epoch']
         loss = checkpoint['loss']
+        epoch = checkpoint['epoch']
         halo.succeed(f'Found a checkpoint (epoch: {epoch}, loss: {loss})')
-    except Exception as e:
-        halo.fail(f'No checkpoints found for this run: {e}')
+    else:
+        halo.fail(f'No checkpoints found for this run')
 
     return epoch, loss
 
@@ -149,7 +155,10 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
     halo.succeed('Successfully learned new classes')
 
     halo = Halo(text=f'Saving model for task {task}').start()
-    model.save(os.path.join(wandb.run.dir, f'vicl-task-{task}.pt'))
+    save_name = f'vicl-task-{task}.pt'
+    save_path = os.path.join(wandb.run.dir, save_name)
+    model.save(save_path)
+    wandb.save(save_name)
     halo.succeed('Successfully saved model')
 
     return model

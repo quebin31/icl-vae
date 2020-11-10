@@ -8,6 +8,7 @@ import random
 
 from argparse import Namespace
 from config import Config
+from halo import Halo
 from torch.utils.data import DataLoader, Subset
 from torchvision.datasets import CIFAR100
 from torchvision import transforms
@@ -45,9 +46,8 @@ if not valid_args(args):
     exit(1)
 
 config = Config.load(args.config)
-wandb.init(project='icl-vae', entity='kdelcastillo',
-           resume=args.run_id if args.run_id else False, config=config.to_dict())
-wandb.save('*.pt')
+resume = args.run_id if args.run_id else False
+wandb.init(project='icl-vae', resume=resume, config=config.to_dict())
 
 random.seed(config.seed)
 torch.manual_seed(config.seed)
@@ -57,18 +57,22 @@ transforms = transforms.Compose([transforms.ToTensor()])
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'Using device: {device}')
-
-vgg19_weights = 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth'
-model = Vicl(vgg_weights=vgg19_weights).to(device)
+model = Vicl().to(device)
 
 if args.train:
     data_train = CIFAR100(root='./data', train=True,
                           download=True, transform=transforms)
 
     if args.task != 0:
-        print(f'Loading previous task ({args.task - 1}) model for training')
-        wandb.restore(f'vicl_task_{args.task - 1}.pt')
-        model.load(os.path.join(wandb.run.dir, f'vicl_task_{args.task - 1}.pt'))
+        text = f'Loading model for task {args.task - 1}'
+        halo = Halo(text=text, spinner='dots').start()
+        handler = wandb.restore(f'vicl-task-{args.task - 1}.pt')
+        if handler:
+            model.load(handler.name)
+            halo.succeed(f'Successfully loaded model for task {args.task - 1}')
+        else:
+            halo.fail(f'Failed to load model for task {args.task - 1}')
+            exit(1)
 
     wandb.watch(model)
     model = train.train(model, data_train, task=args.task, config=config)
