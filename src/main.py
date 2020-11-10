@@ -49,6 +49,7 @@ config = Config.load(args.config)
 resume = args.run_id if args.run_id else False
 wandb.init(project='icl-vae', entity='kdelcastillo',
            resume=resume, config=config.to_dict())
+wandb.save('*.pt')
 
 random.seed(config.seed)
 torch.manual_seed(config.seed)
