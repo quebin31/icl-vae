@@ -31,9 +31,13 @@ def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_schedul
     loss = 0.0
 
     halo = Halo(text='Trying to load a checkpoint', spinner='dots').start()
-
     load_name = f'vicl-task-{task}-cp.pt'
-    handler = wandb.restore(load_name)
+
+    try:
+        handler = wandb.restore(load_name)
+    except:
+        handler = None
+
     if handler:
         checkpoint = torch.load(handler.name, map_location=model.device())
         model.load_state(checkpoint['model'])

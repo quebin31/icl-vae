@@ -47,7 +47,8 @@ if not valid_args(args):
 
 config = Config.load(args.config)
 resume = args.run_id if args.run_id else False
-wandb.init(project='icl-vae', resume=resume, config=config.to_dict())
+wandb.init(project='icl-vae', entity='kdelcastillo',
+           resume=resume, config=config.to_dict())
 
 random.seed(config.seed)
 torch.manual_seed(config.seed)
@@ -66,7 +67,11 @@ if args.train:
     if args.task != 0:
         text = f'Loading model for task {args.task - 1}'
         halo = Halo(text=text, spinner='dots').start()
-        handler = wandb.restore(f'vicl-task-{args.task - 1}.pt')
+        try:
+            handler = wandb.restore(f'vicl-task-{args.task - 1}.pt')
+        except:
+            handler = None
+
         if handler:
             model.load(handler.name)
             halo.succeed(f'Successfully loaded model for task {args.task - 1}')
