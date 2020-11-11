@@ -5,9 +5,9 @@ import torch
 import wandb
 import argparse
 import random
+import yaml
 
 from argparse import Namespace
-from config import Config
 from halo import Halo
 from torch.utils.data import DataLoader, Subset
 from torchvision.datasets import CIFAR100
@@ -22,11 +22,11 @@ def valid_args(args: Namespace):
         print('error: --train and/or --test should be provided')
         valid = False
 
-    if args.train and args.config is None:
+    if args.train and not args.config:
         print('error: --config should be provided when training')
         valid = False
 
-    if args.test and (args.run_id is None and not args.train):
+    if args.test and (not args.id and not args.train):
         print('error: --test should be used together with --train and/or --run-id')
         valid = False
 
@@ -37,22 +37,32 @@ parser = argparse.ArgumentParser(description='Train/test vicl model')
 parser.add_argument('-c', '--config', type=str, help='Hyperparameters config')
 parser.add_argument('-t', '--task', type=int, required=True,
                     help='Task number (starts at 0)')
-parser.add_argument('--train', action='store_true', help='Train the model')
+parser.add_argument('--id', type=str, help='Optional run id (resuming)')
 parser.add_argument('--test', action='store_true', help='Test the model')
-parser.add_argument('--run-id', type=str, help='Optional run id')
+parser.add_argument('--train', action='store_true', help='Train the model')
 
 args = parser.parse_args()
 if not valid_args(args):
     exit(1)
 
-config = Config.load(args.config)
-resume = args.run_id if args.run_id else False
-wandb.init(project='icl-vae', entity='kdelcastillo',
-           resume=resume, config=config.to_dict())
-wandb.save('*.pt')
+if args.config:
+    with open(args.config, 'r') as f:
+        config = yaml.load(f)
+else:
+    config = None
 
-random.seed(config.seed)
-torch.manual_seed(config.seed)
+resume = 'allow' if args.id else None
+wandb.init(project='icl-vae', 
+           entity='kdelcastillo',
+           id=args.id,
+           resume=resume,
+           allow_val_change=True)
+wandb.save('*.pt')
+wandb.config.update(config)
+config = wandb.config
+
+random.seed(config.seed or random.randint(0, 100))
+torch.manual_seed(config.seed or random.randint(0, 100))
 torch.autograd.set_detect_anomaly(False)
 
 transforms = transforms.Compose([transforms.ToTensor()])
@@ -69,7 +79,8 @@ if args.train:
         text = f'Loading model for task {args.task - 1}'
         halo = Halo(text=text, spinner='dots').start()
         try:
-            handler = wandb.restore(f'vicl-task-{args.task - 1}.pt')
+            handler = wandb.restore(
+                f'vicl-task-{args.task - 1}.pt', replace=True)
         except:
             handler = None
 
@@ -85,8 +96,19 @@ if args.train:
 
 if args.test:
     if not args.train:
-        wandb.restore(f'vicl-task-{args.task}.pt')
-        model.load(os.path.join(wandb.run.dir, f'vicl-task-{args.task}.pt'))
+        text = f'Loading model for task {args.task}'
+        halo = Halo(text=text, spinner='dots').start()
+        try:
+            handler = wandb.restore(f'vicl-task-{args.task}.pt', replace=True)
+        except:
+            handler = None
+
+        if handler:
+            model.load(handler.name)
+            halo.succeed(f'Successfully loaded model for task {args.task}')
+        else:
+            halo.fail(f'Failed to load model for task {args.task - 1}')
+            exit(1)
 
     data_test = CIFAR100(root='./data', train=False,
                          download=True, transform=transforms)
