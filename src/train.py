@@ -2,6 +2,7 @@ import os
 import torch
 import wandb
 
+from config import Config
 from halo import Halo
 from mas import LocalSgd, OmegaSgd, compute_omega_grads_norm
 from modules.vicl import Vicl
@@ -22,7 +23,6 @@ def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: Ex
     save_name = f'vicl-task-{task}-cp.pt'
     save_path = os.path.join(wandb.run.dir, save_name)
     torch.save(checkpoint, save_path)
-    wandb.save(save_name)
 
 
 def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int):
@@ -52,7 +52,7 @@ def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_schedul
     return epoch, loss
 
 
-def train(model: Vicl, dataset: Dataset, task: int, config):
+def train(model: Vicl, dataset: Dataset, task: int, config: Config):
     # Init regularizer params (omega values) according to the task number
     if task == 0:
         hyper = config.base
@@ -161,7 +161,6 @@ def train(model: Vicl, dataset: Dataset, task: int, config):
     save_name = f'vicl-task-{task}.pt'
     save_path = os.path.join(wandb.run.dir, save_name)
     model.save(save_path)
-    wandb.save(save_name)
     halo.succeed('Successfully saved model')
 
     return model

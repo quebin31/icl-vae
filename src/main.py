@@ -8,12 +8,14 @@ import random
 import yaml
 
 from argparse import Namespace
+from config import Config
 from halo import Halo
 from torch.utils.data import DataLoader, Subset
 from torchvision.datasets import CIFAR100
 from torchvision import transforms
 from modules.vicl import Vicl
 from utils import split_classes_in_tasks
+from yaml import Loader
 
 
 def valid_args(args: Namespace):
@@ -25,6 +27,9 @@ def valid_args(args: Namespace):
     if args.train and not args.config:
         print('error: --config should be provided when training')
         valid = False
+
+    if args.train and args.task != 0 and not args.id:
+        print('error: --id should be provided when training task != 0')
 
     if args.test and (not args.id and not args.train):
         print('error: --test should be used together with --train and/or --run-id')
@@ -45,21 +50,13 @@ args = parser.parse_args()
 if not valid_args(args):
     exit(1)
 
-if args.config:
-    with open(args.config, 'r') as f:
-        config = yaml.load(f)
-else:
-    config = None
-
-resume = 'allow' if args.id else None
+resume = 'must' if args.id else None
+config = Config.load(args.config)
 wandb.init(project='icl-vae',
            entity='kdelcastillo',
            id=args.id,
            resume=resume,
-           allow_val_change=True)
-wandb.save('*.pt')
-wandb.config.update(config)
-config = wandb.config
+           config=config.to_dict())
 
 random.seed(config.seed or random.randint(0, 100))
 torch.manual_seed(config.seed or random.randint(0, 100))
@@ -76,19 +73,19 @@ if args.train:
                           download=True, transform=transforms)
 
     if args.task != 0:
-        text = f'Loading model for task {args.task - 1}'
+        prev = args.task - 1
+        text = f'Loading model for task {prev}'
         halo = Halo(text=text, spinner='dots').start()
         try:
-            handler = wandb.restore(
-                f'vicl-task-{args.task - 1}.pt', replace=True)
+            handler = wandb.restore(f'vicl-task-{prev}.pt', replace=True)
         except:
             handler = None
 
         if handler:
             model.load(handler.name)
-            halo.succeed(f'Successfully loaded model for task {args.task - 1}')
+            halo.succeed(f'Successfully loaded model for task {prev}')
         else:
-            halo.fail(f'Failed to load model for task {args.task - 1}')
+            halo.fail(f'Failed to load model for task {prev}')
             exit(1)
 
     wandb.watch(model)
