@@ -2,7 +2,6 @@ import os
 import torch
 import wandb
 
-from config import Config
 from halo import Halo
 from mas import LocalSgd, OmegaSgd, compute_omega_grads_norm
 from modules.vicl import Vicl
@@ -53,7 +52,7 @@ def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_schedul
     return epoch, loss
 
 
-def train(model: Vicl, dataset: Dataset, task: int, config: Config):
+def train(model: Vicl, dataset: Dataset, task: int, config):
     # Init regularizer params (omega values) according to the task number
     if task == 0:
         hyper = config.base
