@@ -15,5 +15,6 @@ autopep8 = "*"
 python_version = "3.8"
 
 [scripts]
+setup = "bash -c \"pipenv install && pipenv run install-torch\""
 install-torch = "pip install torch==1.7.0+cu101 torchvision==0.8.1+cu101 -f https://download.pytorch.org/whl/torch_stable.html"
 queue = "pueue add -- python src/main.py"
