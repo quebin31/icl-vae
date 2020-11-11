@@ -52,7 +52,7 @@ else:
     config = None
 
 resume = 'allow' if args.id else None
-wandb.init(project='icl-vae', 
+wandb.init(project='icl-vae',
            entity='kdelcastillo',
            id=args.id,
            resume=resume,
