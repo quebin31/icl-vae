@@ -9,6 +9,7 @@ base:
   lambda_vae: 1
   lambda_cos: 15
   lambda_reg: 0
+  checkpoint_interval: 50
 incr:
   epochs: 100
   batch_size: 32
@@ -18,3 +19,4 @@ incr:
   lambda_vae: 1
   lambda_cos: 10
   lambda_reg: 10
+  checkpoint_interval: 20

@@ -12,6 +12,7 @@ from utils import model_criterion, create_data_loader
 
 
 def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int, epoch: int, loss: float):
+    halo = Halo(text=f'Saving checkpoint (epoch: {epoch}, loss: {loss})', spinner='dots').start()
     checkpoint = {
         'model': model.state(),
         'model_optimizer': model_optimizer.state_dict(),
@@ -23,6 +24,12 @@ def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: Ex
     save_name = f'vicl-task-{task}-cp.pt'
     save_path = os.path.join(wandb.run.dir, save_name)
     torch.save(checkpoint, save_path)
+    try: 
+        wandb.run.save(save_name, policy='now')
+    except Exception as e:
+        halo.fail(f'Couldn\'t save checkpoint: {e}')
+    else:
+        halo.succeed(f'Checkpoint saved (epoch: {epoch}, loss: {loss})')
 
 
 def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int):
@@ -115,8 +122,8 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
         if hyper.decay_every != 0 and ((epoch + 1) % hyper.decay_every) == 0:
             moptim_scheduler.step()
 
-        save_checkpoint(model, model_optimizer, moptim_scheduler,
-                        epoch=epoch, loss=total_loss, task=task)
+        if hyper.checkpoint_interval != 0 and ((epoch + 1) % hyper.checkpoint_interval) == 0:
+            save_checkpoint(model, model_optimizer, moptim_scheduler, epoch=epoch, loss=total_loss, task=task)
 
     # After training the model for this task update the omega values
     omega_optimizer = OmegaSgd(model.reg_params)
@@ -161,6 +168,7 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
     save_name = f'vicl-task-{task}.pt'
     save_path = os.path.join(wandb.run.dir, save_name)
     model.save(save_path)
+    wandb.run.save(save_name, policy='now')
     halo.succeed('Successfully saved model')
 
     return model
