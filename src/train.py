@@ -115,7 +115,7 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
             mean_loss = total_loss / (batch_idx + 1)
 
             halo.text = f'{prefix} ({batch_idx + 1}/{num_batches}), Loss: {mean_loss:.4f}'
-            if batch_idx % config.log_interval == 0:
+            if batch_idx == 0 or ((batch_idx + 1) % config.log_interval == 0):
                 wandb.log({f'Loss for Task {task}': mean_loss})
 
         halo.succeed()
