@@ -4,5 +4,6 @@
     "python.linting.enabled": true,
     "python.formatting.provider": "autopep8",
     "terminal.integrated.shell.linux": "/bin/bash",
-    "python.pythonPath": "/root/.local/share/virtualenvs/icl-vae-v3xkFSzW/bin/python"
+    "python.venvPath": "/content/virtualenvs",
+    "python.pythonPath": "/content/virtualenvs/share-ZRzT72FS/bin/python",
 }
