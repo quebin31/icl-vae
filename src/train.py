@@ -34,7 +34,7 @@ def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_schedul
     load_name = f'vicl-task-{task}-cp.pt'
 
     try:
-        handler = wandb.restore(load_name)
+        handler = wandb.restore(load_name, replace=True)
     except:
         handler = None
 
