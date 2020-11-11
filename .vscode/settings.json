@@ -5,5 +5,5 @@
     "python.formatting.provider": "autopep8",
     "terminal.integrated.shell.linux": "/bin/bash",
     "python.venvPath": "/content/virtualenvs",
-    "python.pythonPath": "/content/virtualenvs/share-ZRzT72FS/bin/python",
+    "python.pythonPath": "/content/virtualenvs/icl-vae-v3xkFSzW/bin/python",
 }
