@@ -1,4 +1,5 @@
 import yaml
+import random
 
 from yaml import Loader
 from typing import Optional
@@ -7,9 +8,6 @@ from typing import Optional
 class Config:
     def __init__(self, dictionary):
         self.dict = dictionary
-
-        if not dictionary:
-            return
 
         def _traverse(key, elem):
             if isinstance(elem, dict):
@@ -23,11 +21,12 @@ class Config:
     def to_dict(self):
         return self.dict
 
-    @staticmethod
-    def load(path: Optional[str]):
-        if not path:
-            return Config(None)
-        else:
-            with open(path, mode='r') as file:
-                config = yaml.load(file, Loader=Loader)
-                return Config(config)
+
+def load_config_dict(path: Optional[str]):
+    if not path:
+        return None
+    else:
+        with open(path, mode='r') as file:
+            config = yaml.load(file, Loader=Loader)
+            config.setdefault('seed', random.randint(0, 100))
+            return config
