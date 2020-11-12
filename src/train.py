@@ -32,7 +32,8 @@ def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: Ex
     except Exception as e:
         halo.fail(f'Couldn\'t save checkpoint (error: {e})')
     else:
-        halo.succeed(f'Successfully saved checkpoint (epoch: {epoch}, loss: {loss})')
+        halo.succeed(
+            f'Successfully saved checkpoint (epoch: {epoch}, loss: {loss})')
 
 
 def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int):
@@ -113,7 +114,8 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
             loss_item = loss.cpu().item()
 
             if math.isnan(loss_item):
-                wandb.alert(title='NaN Loss' text='Loss value became NaN', level=AlertLevel.ERROR)
+                wandb.alert(
+                    title='NaN Loss', text='Loss value became NaN', level=AlertLevel.ERROR)
                 raise RuntimeError('Loss value became NaN')
 
             loss.backward()
