@@ -4,3 +4,4 @@ models
 wandb
 **/.mypy_cache
 .env
+.venv
