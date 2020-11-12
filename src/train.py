@@ -1,6 +1,7 @@
 import os
 import torch
 import wandb
+import math
 
 from config import Config
 from halo import Halo
@@ -9,10 +10,12 @@ from modules.vicl import Vicl
 from torch.utils.data import Dataset
 from torch.optim.lr_scheduler import ExponentialLR
 from utils import model_criterion, create_data_loader
+from wandb import AlertLevel
 
 
 def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int, epoch: int, loss: float):
-    halo = Halo(text=f'Saving checkpoint (epoch: {epoch}, loss: {loss})', spinner='dots').start()
+    halo = Halo(
+        text=f'Saving checkpoint (epoch: {epoch}, loss: {loss})', spinner='dots').start()
     checkpoint = {
         'model': model.state(),
         'model_optimizer': model_optimizer.state_dict(),
@@ -24,7 +27,7 @@ def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: Ex
     save_name = f'vicl-task-{task}-cp.pt'
     save_path = os.path.join(wandb.run.dir, save_name)
     torch.save(checkpoint, save_path)
-    try: 
+    try:
         wandb.run.save(save_name, policy='now')
     except Exception as e:
         halo.fail(f'Couldn\'t save checkpoint: {e}')
@@ -107,11 +110,16 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
 
             loss = model_criterion(
                 x_features, labels, x_mu, x_logvar, z_mu, z_logvar, lambda_vae=hyper.lambda_vae, lambda_cos=hyper.lambda_cos)
-            loss.backward()
+            loss_item = loss.cpu().item()
 
+            if math.isnan(loss_item):
+                wandb.alert(title='NaN Loss' text='Loss value became NaN', level=AlertLevel.ERROR)
+                raise RuntimeError('Loss value became NaN')
+
+            loss.backward()
             model_optimizer.step(model.reg_params)
 
-            total_loss += loss.cpu().item()
+            total_loss += loss_item
             mean_loss = total_loss / (batch_idx + 1)
 
             halo.text = f'{prefix} ({batch_idx + 1}/{num_batches}), Loss: {mean_loss:.4f}'
@@ -123,7 +131,8 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
             moptim_scheduler.step()
 
         if hyper.checkpoint_interval != 0 and ((epoch + 1) % hyper.checkpoint_interval) == 0:
-            save_checkpoint(model, model_optimizer, moptim_scheduler, epoch=epoch, loss=total_loss, task=task)
+            save_checkpoint(model, model_optimizer, moptim_scheduler,
+                            epoch=epoch, loss=total_loss, task=task)
 
     # After training the model for this task update the omega values
     omega_optimizer = OmegaSgd(model.reg_params)
