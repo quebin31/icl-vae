@@ -30,9 +30,9 @@ def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: Ex
     try:
         wandb.run.save(save_name, policy='now')
     except Exception as e:
-        halo.fail(f'Couldn\'t save checkpoint: {e}')
+        halo.fail(f'Couldn\'t save checkpoint (error: {e})')
     else:
-        halo.succeed(f'Checkpoint saved (epoch: {epoch}, loss: {loss})')
+        halo.succeed(f'Successfully saved checkpoint (epoch: {epoch}, loss: {loss})')
 
 
 def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int):
