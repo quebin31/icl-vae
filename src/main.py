@@ -90,7 +90,11 @@ if args.train:
             exit(1)
 
     wandb.watch(model)
-    model = train.train(model, data_train, task=args.task, config=config)
+    try:
+        model = train.train(model, data_train, task=args.task, config=config)
+    except Exception as e:
+        print(f'Training failed: {e}')
+        exit(1)
 
 if args.test:
     if not args.train:
