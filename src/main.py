@@ -24,8 +24,8 @@ def valid_args(args: Namespace):
         print('error: --train and/or --test should be provided')
         valid = False
 
-    if args.train and not args.config:
-        print('error: --config should be provided when training')
+    if args.train and args.task == 0 not args.config:
+        print('error: --config should be provided when training task 0')
         valid = False
 
     if args.train and args.task != 0 and not args.id:
@@ -51,15 +51,16 @@ if not valid_args(args):
     exit(1)
 
 resume = 'must' if args.id else None
-config = Config.load(args.config)
+config = load_config_dict(args.config)
 wandb.init(project='icl-vae',
            entity='kdelcastillo',
            id=args.id,
            resume=resume,
-           config=config.to_dict())
+           config=config)
 
-random.seed(config.seed or random.randint(0, 100))
-torch.manual_seed(config.seed or random.randint(0, 100))
+config = Config(wandb.config)
+random.seed(config.seed)
+torch.manual_seed(config.seed)
 torch.autograd.set_detect_anomaly(False)
 
 transforms = transforms.Compose([transforms.ToTensor()])
