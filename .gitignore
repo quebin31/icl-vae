@@ -5,3 +5,4 @@ wandb
 **/.mypy_cache
 .env
 .venv
+.vscode
