@@ -8,7 +8,7 @@ import random
 import yaml
 
 from argparse import Namespace
-from config import Config
+from config import load_config_dict, Config
 from halo import Halo
 from torch.utils.data import DataLoader, Subset
 from torchvision.datasets import CIFAR100
@@ -24,7 +24,7 @@ def valid_args(args: Namespace):
         print('error: --train and/or --test should be provided')
         valid = False
 
-    if args.train and args.task == 0 not args.config:
+    if args.train and args.task == 0 and not args.config:
         print('error: --config should be provided when training task 0')
         valid = False
 
@@ -105,7 +105,7 @@ if args.test:
             model.load(handler.name)
             halo.succeed(f'Successfully loaded model for task {args.task}')
         else:
-            halo.fail(f'Failed to load model for task {args.task - 1}')
+            halo.fail(f'Failed to load model for task {args.task}')
             exit(1)
 
     data_test = CIFAR100(root='./data', train=False,
