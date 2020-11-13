@@ -116,6 +116,7 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
             if math.isnan(loss_item):
                 wandb.alert(
                     title='NaN Loss', text='Loss value became NaN', level=AlertLevel.ERROR)
+                halo.fail(f'Epoch {epoch + 1} failed (loss became NaN)')
                 raise RuntimeError('Loss value became NaN')
 
             loss.backward()

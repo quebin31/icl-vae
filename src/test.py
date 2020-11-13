@@ -47,4 +47,5 @@ def test(model: Vicl, dataset: Dataset, task: int, batch_size: int):
         wandb.log({f'Acc. Label {label} Task {task}': accuracy})
 
     wandb.log({f'Mean Acc. Task {task}': total_accuracy / len(label_totals)})
+    halo.succeed()
     return model
