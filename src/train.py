@@ -1,7 +1,6 @@
 import os
 import torch
 import wandb
-import math
 
 from config import Config
 from halo import Halo
@@ -15,12 +14,11 @@ from wandb import AlertLevel
 
 def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int, epoch: int, loss: float):
     halo = Halo(
-        text=f'Saving checkpoint (epoch: {epoch}, loss: {loss})', spinner='dots').start()
+        text=f'Saving checkpoint (epoch: {epoch})', spinner='dots').start()
     checkpoint = {
         'model': model.state(),
         'model_optimizer': model_optimizer.state_dict(),
         'moptim_scheduler': moptim_scheduler.state_dict(),
-        'loss': loss,
         'epoch': epoch,
     }
 
@@ -38,7 +36,6 @@ def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: Ex
 
 def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int):
     epoch = 0
-    loss = 0.0
 
     halo = Halo(text='Trying to load a checkpoint', spinner='dots').start()
     load_name = f'vicl-task-{task}-cp.pt'
@@ -54,13 +51,12 @@ def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_schedul
         model_optimizer.load_state_dict(checkpoint['model_optimizer'])
         moptim_scheduler.load_state_dict(checkpoint['moptim_scheduler'])
 
-        loss = checkpoint['loss']
         epoch = checkpoint['epoch']
-        halo.succeed(f'Found a checkpoint (epoch: {epoch}, loss: {loss})')
+        halo.succeed(f'Found a checkpoint (epoch: {epoch})')
     else:
         halo.fail(f'No checkpoints found for this run')
 
-    return epoch, loss
+    return epoch
 
 
 def train(model: Vicl, dataset: Dataset, task: int, config: Config):
@@ -88,12 +84,12 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
     num_batches = len(dataloader)
 
     # Try to load state dict from checkpoints
-    epoch, loss = maybe_load_checkpoint(
+    epoch = maybe_load_checkpoint(
         model, model_optimizer, moptim_scheduler, task=task)
 
     # Start training the model
     for epoch in range(epoch, hyper.epochs):
-        total_loss = loss
+        total_loss = 0.0
 
         prefix = f'Epoch {epoch + 1}/{hyper.epochs}'
         halo = Halo(text=prefix, spinner='dots').start()
@@ -111,9 +107,8 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
 
             loss = model_criterion(
                 x_features, labels, x_mu, x_logvar, z_mu, z_logvar, lambda_vae=hyper.lambda_vae, lambda_cos=hyper.lambda_cos)
-            loss_item = loss.cpu().item()
 
-            if math.isnan(loss_item):
+            if torch.isnan(los).item():
                 wandb.alert(
                     title='NaN Loss', text='Loss value became NaN', level=AlertLevel.ERROR)
                 halo.fail(f'Epoch {epoch + 1} failed (loss became NaN)')
@@ -122,7 +117,7 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
             loss.backward()
             model_optimizer.step(model.reg_params)
 
-            total_loss += loss_item
+            total_loss += loss.cpu().item()
             mean_loss = total_loss / (batch_idx + 1)
 
             halo.text = f'{prefix} ({batch_idx + 1}/{num_batches}), Loss: {mean_loss:.4f}'
