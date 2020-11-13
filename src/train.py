@@ -6,9 +6,9 @@ from config import Config
 from halo import Halo
 from mas import LocalSgd, OmegaSgd, compute_omega_grads_norm
 from modules.vicl import Vicl
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from torch.optim.lr_scheduler import ExponentialLR
-from utils import model_criterion, create_data_loader
+from utils import model_criterion, split_classes_in_tasks, create_subset
 from wandb import AlertLevel
 
 
@@ -78,9 +78,11 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
         model.vae.parameters(), hyper.lambda_reg, lr=hyper.learning_rate)
     moptim_scheduler = ExponentialLR(model_optimizer, gamma=hyper.decay_rate)
 
-    # Create the data loaders
-    dataloader = create_data_loader(
-        dataset, task=task, batch_size=hyper.batch_size)
+    # Create the data loader
+    tasks_indices = split_classes_in_tasks(dataset)
+    task_subset = create_subset(dataset, task, tasks_indices, accumulate=False)
+    dataloader = DataLoader(
+        task_subset, batch_size=hyper.batch_size, shuffle=True, num_workers=6)
     num_batches = len(dataloader)
 
     # Try to load state dict from checkpoints
@@ -108,7 +110,7 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
             loss = model_criterion(
                 x_features, labels, x_mu, x_logvar, z_mu, z_logvar, lambda_vae=hyper.lambda_vae, lambda_cos=hyper.lambda_cos)
 
-            if torch.isnan(los).item():
+            if torch.isnan(loss).item():
                 wandb.alert(
                     title='NaN Loss', text='Loss value became NaN', level=AlertLevel.ERROR)
                 halo.fail(f'Epoch {epoch + 1} failed (loss became NaN)')
