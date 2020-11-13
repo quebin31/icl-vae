@@ -71,9 +71,6 @@ print(f'Using device: {device}')
 model = Vicl().to(device)
 
 if args.train:
-    data_train = CIFAR100(root='./data', train=True,
-                          download=True, transform=transforms)
-
     if args.task != 0:
         prev = args.task - 1
         text = f'Loading model for task {prev}'
@@ -92,6 +89,8 @@ if args.train:
 
     wandb.watch(model)
     try:
+        data_train = CIFAR100(root='./data', train=True,
+                              download=True, transform=transforms)
         model = train(model, data_train, task=args.task, config=config)
     except Exception as e:
         print(f'Training failed: {e}')
