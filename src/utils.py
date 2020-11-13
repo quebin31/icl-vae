@@ -1,10 +1,10 @@
 import random
+import sys
+from typing import List, Optional
+
 import torch
 import torch.nn.functional as F
-import sys
-
-from torch.utils.data import Dataset, DataLoader, Subset
-from typing import Optional, List
+from torch.utils.data import DataLoader, Dataset, Subset
 
 LOG_2_PI = 1.8378770664093453
 
@@ -105,8 +105,8 @@ def create_subset(dataset: Dataset, task: int, tasks_indices: List[List[int]], a
 
 
 if __name__ == '__main__':
-    from torchvision.datasets import MNIST
     from torchvision import transforms
+    from torchvision.datasets import MNIST
 
     t = transforms.ToTensor()
     d = MNIST(root='./data', train=True, download=True, transform=t)

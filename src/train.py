@@ -1,15 +1,16 @@
 import os
+
 import torch
 import wandb
+from halo import Halo
+from torch.optim.lr_scheduler import ExponentialLR
+from torch.utils.data import DataLoader, Dataset
+from wandb import AlertLevel
 
 from config import Config
-from halo import Halo
 from mas import LocalSgd, OmegaSgd, compute_omega_grads_norm
 from modules.vicl import Vicl
-from torch.utils.data import Dataset, DataLoader
-from torch.optim.lr_scheduler import ExponentialLR
-from utils import model_criterion, split_classes_in_tasks, create_subset
-from wandb import AlertLevel
+from utils import create_subset, model_criterion, split_classes_in_tasks
 
 
 def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int, epoch: int, loss: float):

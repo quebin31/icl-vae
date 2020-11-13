@@ -1,8 +1,8 @@
-import yaml
 import random
-
-from yaml import Loader
 from typing import Optional
+
+import yaml
+from yaml import Loader
 
 
 class Config:

@@ -1,21 +1,22 @@
+import argparse
 import os
-import train
+import random
 import test
+from argparse import Namespace
+
 import torch
 import wandb
-import argparse
-import random
 import yaml
-
-from argparse import Namespace
-from config import load_config_dict, Config
 from halo import Halo
 from torch.utils.data import DataLoader, Subset
-from torchvision.datasets import CIFAR100
 from torchvision import transforms
+from torchvision.datasets import CIFAR100
+from yaml import Loader
+
+import train
+from config import Config, load_config_dict
 from modules.vicl import Vicl
 from utils import split_classes_in_tasks
-from yaml import Loader
 
 
 def valid_args(args: Namespace):

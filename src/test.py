@@ -1,10 +1,11 @@
+from typing import List, Optional
+
 import wandb
+from halo import Halo
+from torch.utils.data import DataLoader, Dataset
 
 from modules.vicl import Vicl
-from torch.utils.data import Dataset, DataLoader
-from utils import split_classes_in_tasks, create_subset
-from halo import Halo
-from typing import List, Optional
+from utils import create_subset, split_classes_in_tasks
 
 
 def test(model: Vicl, dataset: Dataset, task: int, batch_size: int):

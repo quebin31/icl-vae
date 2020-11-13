@@ -1,11 +1,11 @@
 # Adapted from https://github.com/wannabeOG/MAS-PyTorch
 
 import torch
-
-from modules.vicl import Vicl
+from halo import Halo
 from torch import optim
 from torch.utils.data import DataLoader
-from halo import Halo
+
+from modules.vicl import Vicl
 
 
 class LocalSgd(optim.SGD):

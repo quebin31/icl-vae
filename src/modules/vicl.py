@@ -1,12 +1,13 @@
-import torch
 import math
+
+import torch
+from halo import Halo
+from torch import nn
+from torchvision.models.utils import load_state_dict_from_url
+from utils import cosine_distance, empty
 
 from modules.vae import Vae
 from modules.vgg import Vgg19
-from torch import nn
-from torchvision.models.utils import load_state_dict_from_url
-from utils import empty, cosine_distance
-from halo import Halo
 
 
 class Vicl(nn.Module):
