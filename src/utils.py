@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import sys
 
 from torch.utils.data import Dataset, DataLoader, Subset
+from typing import Optional, List
 
 LOG_2_PI = 1.8378770664093453
 
@@ -15,7 +16,7 @@ def empty(ls):
     return len(ls) == 0
 
 
-def cosine_distance(x1, x2, dim = 1):
+def cosine_distance(x1, x2, dim=1):
     """
     Compute the cosine distance between `x1` and `x2`, the `dim` param
     by default is 1 (due to batches)
@@ -60,7 +61,7 @@ def loss_term_cos(y, z_mu, z_logvar):
     return total
 
 
-def model_criterion(x, y, x_mu, x_logvar, z_mu, z_logvar, lambda_vae = 1.0, lambda_cos = 1.0):
+def model_criterion(x, y, x_mu, x_logvar, z_mu, z_logvar, lambda_vae=1.0, lambda_cos=1.0):
     """
     Compute the whole loss term (aka model criterion), note that here isn't
     included the mas term loss (it's already included in `LocalSgd`)
@@ -93,13 +94,14 @@ def split_classes_in_tasks(dataset: Dataset):
     return tasks_indices
 
 
-def create_data_loader(dataset: Dataset, task: int, batch_size: int, num_workers: int = 6):
-    tasks = split_classes_in_tasks(dataset)
-    subset = Subset(dataset, tasks[task])
-    dataloader = DataLoader(subset, batch_size=batch_size,
-                            shuffle=True, num_workers=num_workers)
+def create_subset(dataset: Dataset, task: int, tasks_indices: List[List[int]], accumulate: bool):
+    start_idx = 0 if accumulate else task
 
-    return dataloader
+    indices = []
+    for t in range(start_idx, task + 1):
+        indices += tasks_indices[t]
+
+    return Subset(dataset, indices)
 
 
 if __name__ == '__main__':
