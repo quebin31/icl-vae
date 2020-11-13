@@ -1,7 +1,6 @@
 import argparse
 import os
 import random
-import test
 from argparse import Namespace
 
 import torch
@@ -13,9 +12,10 @@ from torchvision import transforms
 from torchvision.datasets import CIFAR100
 from yaml import Loader
 
-import train
 from config import Config, load_config_dict
 from modules.vicl import Vicl
+from mtest import test
+from train import train
 from utils import split_classes_in_tasks
 
 
@@ -92,7 +92,7 @@ if args.train:
 
     wandb.watch(model)
     try:
-        model = train.train(model, data_train, task=args.task, config=config)
+        model = train(model, data_train, task=args.task, config=config)
     except Exception as e:
         print(f'Training failed: {e}')
         exit(1)
@@ -115,4 +115,4 @@ if args.test:
 
     data_test = CIFAR100(root='./data', train=False,
                          download=True, transform=transforms)
-    model = test.test(model, data_test, task=args.task,  batch_size=16)
+    model = test(model, data_test, task=args.task,  batch_size=16)
