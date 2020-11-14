@@ -13,20 +13,20 @@ def test(model: Vicl, dataset: Dataset, task: int, batch_size: int):
 
     base_subset = create_subset(
         dataset, task=0, tasks_indices=tasks_indices, accumulate=False)
-    test_with_subset('(Base)', model, base_subset, batch_size)
+    test_with_subset('(Base)', model, base_subset, task, batch_size)
 
     new_subset = create_subset(
         dataset, task=task, tasks_indices=tasks_indices, accumulate=False)
-    test_with_subset('(New)', model, new_subset, batch_size)
+    test_with_subset('(New)', model, new_subset, task, batch_size)
 
     all_subset = create_subset(
         dataset, task=task, tasks_indices=tasks_indices, accumulate=True)
-    test_with_subset('(All)', model, all_subset, batch_size)
+    test_with_subset('(All)', model, all_subset, task, batch_size)
 
     return model
 
 
-def test_with_subset(metric: str, model: Vicl, dataset: Dataset, batch_size: int):
+def test_with_subset(metric: str, model: Vicl, dataset: Dataset, task: int, batch_size: int):
     device = model.device()
 
     dataloader = DataLoader(dataset, batch_size=batch_size,
