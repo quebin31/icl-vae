@@ -11,6 +11,7 @@ wandb = "*"
 [dev-packages]
 autopep8 = "*"
 rope = "*"
+mypy = "*"
 
 [requires]
 python_version = "3"
