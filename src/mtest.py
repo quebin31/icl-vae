@@ -67,7 +67,6 @@ def test_with_subset(metric: str, model: Vicl, dataset: Dataset, task: int, batc
     for label, total in label_totals.items():
         accuracy = label_corrects[label] / total
         total_accuracy += accuracy
-        acc[f'{metric} Acc. Label {label} Task {task}'] = accuracy
 
     acc[f'{metric} Mean Acc. Task {task}'] = total_accuracy / len(label_totals)
     wandb.log(acc)
