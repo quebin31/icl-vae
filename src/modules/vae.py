@@ -7,19 +7,22 @@ class Vae(nn.Module):
     def __init__(self):
         super(Vae, self).__init__()
 
-        self.fc1 = nn.Linear(8192, 4096)
-        self.fc2 = nn.Linear(4096, 2048)
-        self.fc3_mu = nn.Linear(2048, 2048)
-        self.fc3_lv = nn.Linear(2048, 2048)
-        self.fc4 = nn.Linear(2048, 2048)
-        self.fc5 = nn.Linear(2048, 4096)
-        self.fc6_mu = nn.Linear(4096, 8192)
-        self.fc6_lv = nn.Linear(4096, 8192)
+        self.fc1 = nn.Linear(8192, 6144)
+        self.fc2 = nn.Linear(6144, 4096)
+        self.fc3 = nn.Linear(4096, 2048)
+        self.fc4_mu = nn.Linear(2048, 2048)
+        self.fc4_lv = nn.Linear(2048, 2048)
+        self.fc5 = nn.Linear(2048, 2048)
+        self.fc6 = nn.Linear(2048, 4096)
+        self.fc7 = nn.Linear(4096, 6144)
+        self.fc8_mu = nn.Linear(6144, 8192)
+        self.fc8_lv = nn.Linear(6144, 8192)
 
     def encode(self, x):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        return self.fc3_mu(x), self.fc3_lv(x)
+        x = F.relu(self.fc3(x))
+        return self.fc4_mu(x), self.fc4_lv(x)
 
     def reparameterize(self, mu, logvar):
         std = torch.exp(0.5 * logvar)
@@ -27,9 +30,10 @@ class Vae(nn.Module):
         return mu + eps * std
 
     def decode(self, z):
-        z = F.relu(self.fc4(z))
         z = F.relu(self.fc5(z))
-        return self.fc6_mu(z), self.fc6_lv(z)
+        z = F.relu(self.fc6(z))
+        z = F.relu(self.fc7(z))
+        return self.fc8_mu(z), self.fc8_lv(z)
 
     def forward(self, x):
         z_mu, z_logvar = self.encode(x)
