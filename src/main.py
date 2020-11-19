@@ -72,7 +72,7 @@ if args.train:
         halo = Halo(text=text, spinner='dots').start()
         try:
             handler = wandb.restore(
-                f'vicl-task-{prev}.pt', replace=True, run_path=f'kdelcastillo/icl-vae/{config.prev}')
+                f'vicl-task-{prev}.pt', replace=True, run_path=f'kdelcastillo/icl-vae/{args.prev}')
         except:
             handler = None
 
@@ -98,7 +98,7 @@ if args.test:
         halo = Halo(text=text, spinner='dots').start()
         try:
             handler = wandb.restore(
-                f'vicl-task-{args.task}.pt', replace=True, run_path=f'kdelcastillo/icl-vae/{config.prev}')
+                f'vicl-task-{args.task}.pt', replace=True, run_path=f'kdelcastillo/icl-vae/{args.prev}')
         except:
             handler = None
 
