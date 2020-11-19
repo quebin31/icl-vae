@@ -6,7 +6,7 @@ base:
   learning_rate: 0.000005
   decay_rate: 0.85 
   decay_every: 50 # epochs
-  lambda_vae: 1
+  lambda_vae: 5
   lambda_cos: 20
   lambda_reg: 0
   checkpoint_interval: 50
@@ -16,7 +16,7 @@ incr:
   learning_rate: 0.0000035
   decay_rate: 0.8
   decay_every: 25 # epochs
-  lambda_vae: 1
+  lambda_vae: 5
   lambda_cos: 10
   lambda_reg: 20
   checkpoint_interval: 25
