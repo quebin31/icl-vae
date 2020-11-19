@@ -29,10 +29,10 @@ def valid_args(args: Namespace):
         print('error: --config should be provided when training task 0')
         valid = False
 
-    if args.train and args.task != 0 and not args.id:
+    if args.train and args.task != 0 and not args.prev:
         print('error: --id should be provided when training task != 0')
 
-    if args.test and (not args.id and not args.train):
+    if args.test and (not args.prev and not args.train):
         print('error: --test should be used together with --train and/or --run-id')
         valid = False
 
@@ -43,7 +43,7 @@ parser = argparse.ArgumentParser(description='Train/test vicl model')
 parser.add_argument('-c', '--config', type=str, help='Hyperparameters config')
 parser.add_argument('-t', '--task', type=int, required=True,
                     help='Task number (starts at 0)')
-parser.add_argument('--id', type=str, help='Optional run id (resuming)')
+parser.add_argument('--prev', type=str, help='Previous task run id')
 parser.add_argument('--test', action='store_true', help='Test the model')
 parser.add_argument('--train', action='store_true', help='Train the model')
 
@@ -51,13 +51,8 @@ args = parser.parse_args()
 if not valid_args(args):
     exit(1)
 
-resume = 'must' if args.id else None
 config = load_config_dict(args.config)
-wandb.init(project='icl-vae',
-           entity='kdelcastillo',
-           id=args.id,
-           resume=resume,
-           config=config)
+wandb.init(project='icl-vae', entity='kdelcastillo', config=config)
 
 config = Config(wandb.config)
 random.seed(config.seed)
@@ -76,7 +71,8 @@ if args.train:
         text = f'Loading model for task {prev}'
         halo = Halo(text=text, spinner='dots').start()
         try:
-            handler = wandb.restore(f'vicl-task-{prev}.pt', replace=True)
+            handler = wandb.restore(
+                f'vicl-task-{prev}.pt', replace=True, run_path=f'kdelcastillo/icl-vae/{config.prev}')
         except:
             handler = None
 
@@ -101,7 +97,8 @@ if args.test:
         text = f'Loading model for task {args.task}'
         halo = Halo(text=text, spinner='dots').start()
         try:
-            handler = wandb.restore(f'vicl-task-{args.task}.pt', replace=True)
+            handler = wandb.restore(
+                f'vicl-task-{args.task}.pt', replace=True, run_path=f'kdelcastillo/icl-vae/{config.prev}')
         except:
             handler = None
 
