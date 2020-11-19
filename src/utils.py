@@ -30,6 +30,7 @@ def loss_term_vae(x, x_mu, x_logvar, z_mu, z_logvar):
     to be minimized.
     """
 
+    # https://github.com/y0ast/Variational-Autoencoder/blob/master/VAE.py#L118
     LGP = -torch.sum((-0.5 * LOG_2_PI) + (-0.5 * x_logvar) +
                      (-0.5 * (x - x_mu).pow(2) / (x_logvar.exp())), dim=1).mean(dim=0)
 
