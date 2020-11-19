@@ -13,10 +13,10 @@ base:
 incr:
   epochs: 100
   batch_size: 32
-  learning_rate: 0.000004
+  learning_rate: 0.000003
   decay_rate: 0.8
   decay_every: 25 # epochs
   lambda_vae: 1
-  lambda_cos: 20
-  lambda_reg: 10
+  lambda_cos: 10
+  lambda_reg: 20
   checkpoint_interval: 25
