@@ -1,5 +1,5 @@
 log_interval: 17
-seed: 15
+seed: 33
 base:
   epochs: 250
   batch_size: 32
