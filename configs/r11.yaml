@@ -1,0 +1,22 @@
+log_interval: 17
+seed: 86
+base:
+  epochs: 250
+  batch_size: 32
+  learning_rate: 0.000001
+  decay_rate: 1
+  decay_every: 50 # epochs
+  lambda_vae: 5
+  lambda_cos: 15
+  lambda_reg: 0
+  checkpoint_interval: 50
+incr:
+  epochs: 100
+  batch_size: 32
+  learning_rate: 0.000001
+  decay_rate: 0.9
+  decay_every: 25 # epochs
+  lambda_vae: 5
+  lambda_cos: 15
+  lambda_reg: 25
+  checkpoint_interval: 25
