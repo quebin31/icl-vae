@@ -16,6 +16,14 @@ def empty(ls):
     return len(ls) == 0
 
 
+def calculate_std(logvar):
+    return torch.exp(0.5 * logvar)
+
+
+def calculate_var(logvar):
+    return torch.exp(logvar)
+
+
 def cosine_distance(x1, x2, dim=1):
     """
     Compute the cosine distance between `x1` and `x2`, the `dim` param
@@ -46,6 +54,7 @@ def loss_term_cos(y, z_mu, z_logvar):
     """
 
     batch_size = y.size(0)
+    z_var = calculate_var(z_logvar)
 
     total = 0.0
     for _ in range(batch_size):
@@ -57,7 +66,7 @@ def loss_term_cos(y, z_mu, z_logvar):
         sign = 1 if y[i] == y[j] else -1
         total += sign * \
             (cosine_distance(z_mu[i], z_mu[j], dim=0) +
-             cosine_distance(z_logvar[i], z_logvar[j], dim=0))
+             cosine_distance(z_var[i], z_var[j], dim=0))
 
     return total
 
