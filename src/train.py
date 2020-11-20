@@ -11,6 +11,7 @@ from config import Config
 from mas import LocalSgd, OmegaSgd, compute_omega_grads_norm
 from modules.vicl import Vicl
 from utils import create_subset, model_criterion, split_classes_in_tasks
+from utils import calculate_var
 
 
 def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int, epoch: int, loss: float):
@@ -109,7 +110,8 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
             z_mu, z_logvar = output['z_mu'], output['z_logvar']
 
             loss = model_criterion(
-                x_features, labels, x_mu, x_logvar, z_mu, z_logvar, lambda_vae=hyper.lambda_vae, lambda_cos=hyper.lambda_cos)
+                x_features, labels, x_mu, x_logvar, z_mu, z_logvar, 
+                lambda_vae=hyper.lambda_vae, lambda_cos=hyper.lambda_cos)
 
             if torch.isnan(loss).item():
                 wandb.alert(
@@ -154,7 +156,7 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
         data = data.to(device)
 
         output = model(data)
-        z_mu, z_logvar = output['z_mu'], output['z_logvar']
+        z_mu, z_var = output['z_mu'], calculate_var(output['z_logvar'])
 
         # Sum the "mu" and "logvar" values, also count the total for each label
         for i in range(0, labels.size(0)):
@@ -164,14 +166,14 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
                 'mu', torch.zeros(z_mu.size(1), device=device)).add_(z_mu[i])
 
             model.class_idents.setdefault(label, {}).setdefault(
-                'logvar', torch.zeros(z_logvar.size(1), device=device)).add_(z_logvar[i])
+                'var', torch.zeros(z_var.size(1), device=device)).add_(z_var[i])
 
             label_total[label] = label_total.get(label, 0) + 1
 
     # Divide by the total of each label
     for label, total in label_total.items():
         model.class_idents[label]['mu'] /= total
-        model.class_idents[label]['logvar'] /= total
+        model.class_idents[label]['var'] /= total
     halo.succeed('Successfully learned new classes')
 
     halo = Halo(text=f'Saving model for task {task}').start()
