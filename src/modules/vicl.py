@@ -4,7 +4,7 @@ import torch
 from halo import Halo
 from torch import nn
 from torchvision.models.utils import load_state_dict_from_url
-from utils import cosine_distance, empty
+from utils import cosine_distance, empty, calculate_var
 
 from modules.vae import Vae
 from modules.vgg import Vgg19
@@ -61,6 +61,7 @@ class Vicl(nn.Module):
         if z_mu is None and z_logvar is None:
             output = self(x)
             z_mu, z_logvar = output['z_mu'], output['z_logvar']
+            z_var = calculate_var(z_logvar)
 
         device = self.device()
         batch_size = x.size(0)
@@ -71,14 +72,14 @@ class Vicl(nn.Module):
             print(f"⚠ No registered class identifiers")
 
         for label, prototype in self.class_idents.items():
-            proto_mu, proto_logvar = prototype['mu'], prototype['logvar']
+            proto_mu, proto_var = prototype['mu'], prototype['var']
 
             proto_mu = proto_mu.repeat(batch_size, 1)
-            proto_logvar = proto_logvar.repeat(batch_size, 1)
+            proto_var = proto_var.repeat(batch_size, 1)
 
             mu_distances = cosine_distance(z_mu, proto_mu)
-            logvar_distances = cosine_distance(z_logvar, proto_logvar)
-            distances = mu_distances + logvar_distances
+            var_distances = cosine_distance(z_var, proto_var)
+            distances = mu_distances + var_distances
 
             for i in range(0, batch_size):
                 distance = distances[i].cpu().item()
