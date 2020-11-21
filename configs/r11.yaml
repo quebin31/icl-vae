@@ -3,7 +3,7 @@ seed: 86
 base:
   epochs: 200
   batch_size: 32
-  learning_rate: 0.0000005
+  learning_rate: 0.0000001
   decay_rate: 0.9
   decay_every: 50 # epochs
   lambda_l1: 1
@@ -14,7 +14,7 @@ base:
 incr:
   epochs: 100
   batch_size: 32
-  learning_rate: 0.0000005
+  learning_rate: 0.0000001
   decay_rate: 0.9
   decay_every: 25 # epochs
   lambda_l1: 1
