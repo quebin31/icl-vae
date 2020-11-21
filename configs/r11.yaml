@@ -1,12 +1,12 @@
 log_interval: 17
-seed: 59
+seed: 86
 base:
   epochs: 200
   batch_size: 32
-  learning_rate: 0.000001
+  learning_rate: 0.0000005
   decay_rate: 0.9
   decay_every: 50 # epochs
-  lambda_l1: 5
+  lambda_l1: 1
   lambda_vae: 5
   lambda_cos: 10
   lambda_reg: 0
@@ -14,10 +14,10 @@ base:
 incr:
   epochs: 100
   batch_size: 32
-  learning_rate: 0.000001
+  learning_rate: 0.0000005
   decay_rate: 0.9
   decay_every: 25 # epochs
-  lambda_l1: 5
+  lambda_l1: 1
   lambda_vae: 5
   lambda_cos: 10
   lambda_reg: 20
