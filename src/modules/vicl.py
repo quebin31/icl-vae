@@ -61,8 +61,8 @@ class Vicl(nn.Module):
         if z_mu is None and z_logvar is None:
             output = self(x)
             z_mu, z_logvar = output['z_mu'], output['z_logvar']
-            z_var = calculate_var(z_logvar)
 
+        z_var = calculate_var(z_logvar)
         device = self.device()
         batch_size = x.size(0)
         prediction = [None] * batch_size
