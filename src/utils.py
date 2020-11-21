@@ -32,7 +32,7 @@ def cosine_distance(x1, x2, dim=1):
     return 1.0 - F.cosine_similarity(x1, x2, dim=dim)
 
 
-def loss_term_vae(x, x_mu, x_logvar, z_mu, z_logvar):
+def loss_term_vae(x, x_mu, x_logvar, z_mu, z_logvar, eps=1e-6):
     """
     Compute the vae term from the loss function, it's already calculated
     to be minimized.
@@ -40,7 +40,7 @@ def loss_term_vae(x, x_mu, x_logvar, z_mu, z_logvar):
 
     # https://github.com/y0ast/Variational-Autoencoder/blob/master/VAE.py#L118
     LGP = -torch.sum((-0.5 * LOG_2_PI) + (-0.5 * x_logvar) +
-                     (-0.5 * (x - x_mu).pow(2) / (x_logvar.exp())), dim=1).mean(dim=0)
+                     (-0.5 * (x - x_mu).pow(2) / (x_logvar.exp() + eps)), dim=1).mean(dim=0)
 
     KLD = -0.5 * torch.sum(1 + z_logvar - z_mu.pow(2) -
                            z_logvar.exp(), dim=1)
