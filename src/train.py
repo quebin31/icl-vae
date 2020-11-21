@@ -14,9 +14,9 @@ from utils import create_subset, model_criterion, split_classes_in_tasks
 from utils import calculate_var
 
 
-def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int, epoch: int, loss: float):
+def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int, epoch: int):
     halo = Halo(
-        text=f'Saving checkpoint (epoch: {epoch})', spinner='dots').start()
+        text=f'Saving checkpoint (epoch: {epoch + 1})', spinner='dots').start()
     checkpoint = {
         'model': model.state(),
         'model_optimizer': model_optimizer.state_dict(),
@@ -33,7 +33,7 @@ def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: Ex
         halo.fail(f'Couldn\'t save checkpoint (error: {e})')
     else:
         halo.succeed(
-            f'Successfully saved checkpoint (epoch: {epoch}, loss: {loss})')
+            f'Successfully saved checkpoint (epoch: {epoch + 1})')
 
 
 def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int):
@@ -134,8 +134,7 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
             moptim_scheduler.step()
 
         if hyper.checkpoint_interval != 0 and ((epoch + 1) % hyper.checkpoint_interval) == 0:
-            save_checkpoint(model, model_optimizer, moptim_scheduler,
-                            epoch=epoch, loss=total_loss, task=task)
+            save_checkpoint(model, model_optimizer, moptim_scheduler, epoch=epoch, task=task)
 
     # After training the model for this task update the omega values
     omega_optimizer = OmegaSgd(model.reg_params)
