@@ -17,6 +17,6 @@ incr:
   decay_rate: 0.9
   decay_every: 25 # epochs
   lambda_vae: 5
-  lambda_cos: 10
+  lambda_cos: 12
   lambda_reg: 20
   checkpoint_interval: 25
