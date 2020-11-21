@@ -4,7 +4,7 @@ base:
   epochs: 250
   batch_size: 32
   learning_rate: 0.000001
-  decay_rate: 1
+  decay_rate: 0.9
   decay_every: 50 # epochs
   lambda_vae: 5
   lambda_cos: 15
