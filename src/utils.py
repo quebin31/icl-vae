@@ -66,7 +66,7 @@ def loss_term_cos(y, z_mu, z_logvar):
         sign = 1 if y[i] == y[j] else -1
         total += sign * \
             (cosine_distance(z_mu[i], z_mu[j], dim=0) +
-             0.5 * cosine_distance(z_var[i], z_var[j], dim=0))
+             cosine_distance(z_var[i], z_var[j], dim=0))
 
     return total
 
