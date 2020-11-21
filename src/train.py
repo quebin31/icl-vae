@@ -14,7 +14,7 @@ from utils import create_subset, model_criterion, split_classes_in_tasks
 from utils import calculate_var
 
 
-def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int, epoch: int):
+def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int, epoch: int, models_dir: str):
     halo = Halo(
         text=f'Saving checkpoint (epoch: {epoch + 1})', spinner='dots').start()
     checkpoint = {
@@ -24,44 +24,37 @@ def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: Ex
         'epoch': epoch,
     }
 
-    save_name = f'vicl-task-{task}-cp.pt'
-    save_path = os.path.join(wandb.run.dir, save_name)
-    torch.save(checkpoint, save_path)
     try:
-        wandb.run.save(save_name, policy='now')
+        save_name = f'vicl-task-{task}-cp.pt'
+        save_path = os.path.join(models_dir, save_name)
+        torch.save(checkpoint, save_path)
     except Exception as e:
         halo.fail(f'Couldn\'t save checkpoint (error: {e})')
     else:
-        halo.succeed(
-            f'Successfully saved checkpoint (epoch: {epoch + 1})')
+        halo.succeed(f'Successfully saved checkpoint (epoch: {epoch + 1})')
 
 
-def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int):
+def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int, models_dir: str):
     epoch = 0
-
     halo = Halo(text='Trying to load a checkpoint', spinner='dots').start()
     load_name = f'vicl-task-{task}-cp.pt'
+    load_path = os.path.join(models_dir, load_name)
 
     try:
-        handler = wandb.restore(load_name, replace=True)
-    except:
-        handler = None
-
-    if handler:
-        checkpoint = torch.load(handler.name, map_location=model.device())
+        checkpoint = torch.load(load_path, map_location=model.device())
+    except Exception as e:
+        halo.fail(f'No checkpoints found for this run')
+    else:
         model.load_state(checkpoint['model'])
         model_optimizer.load_state_dict(checkpoint['model_optimizer'])
         moptim_scheduler.load_state_dict(checkpoint['moptim_scheduler'])
-
         epoch = checkpoint['epoch']
         halo.succeed(f'Found a checkpoint (epoch: {epoch})')
-    else:
-        halo.fail(f'No checkpoints found for this run')
 
     return epoch
 
 
-def train(model: Vicl, dataset: Dataset, task: int, config: Config):
+def train(model: Vicl, dataset: Dataset, task: int, config: Config, models_dir: str):
     # Init regularizer params (omega values) according to the task number
     if task == 0:
         hyper = config.base
@@ -89,7 +82,7 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
 
     # Try to load state dict from checkpoints
     epoch = maybe_load_checkpoint(
-        model, model_optimizer, moptim_scheduler, task=task)
+        model, model_optimizer, moptim_scheduler, task=task, models_dir=models_dir)
 
     # Start training the model
     for epoch in range(epoch, hyper.epochs):
@@ -134,7 +127,8 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
             moptim_scheduler.step()
 
         if hyper.checkpoint_interval != 0 and ((epoch + 1) % hyper.checkpoint_interval) == 0:
-            save_checkpoint(model, model_optimizer, moptim_scheduler, epoch=epoch, task=task)
+            save_checkpoint(model, model_optimizer,
+                            moptim_scheduler, epoch=epoch, task=task, models_dir=models_dir)
 
     # After training the model for this task update the omega values
     omega_optimizer = OmegaSgd(model.reg_params)
@@ -177,9 +171,8 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config):
 
     halo = Halo(text=f'Saving model for task {task}').start()
     save_name = f'vicl-task-{task}.pt'
-    save_path = os.path.join(wandb.run.dir, save_name)
+    save_path = os.path.join(models_dir, save_name)
     model.save(save_path)
-    wandb.run.save(save_name, policy='now')
     halo.succeed('Successfully saved model')
 
     return model

@@ -30,10 +30,10 @@ def valid_args(args: Namespace):
         print('error: --config should be provided when training task 0')
         valid = False
 
-    if args.train and args.task != 0 and not args.prev:
+    if args.train and args.task != 0 and not args.runid:
         print('error: --id should be provided when training task != 0')
 
-    if args.test and (not args.prev and not args.train):
+    if args.test and (not args.runid and not args.train):
         print('error: --test should be used together with --train and/or --run-id')
         valid = False
 
@@ -45,11 +45,12 @@ def run_name(config_path: str, task: int):
     return f'{config_path.stem} task {task}'
 
 
+models_dir = os.getenv("MODELS_DIR", "./models")
 parser = argparse.ArgumentParser(description='Train/test vicl model')
 parser.add_argument('-c', '--config', type=str, help='Hyperparameters config')
 parser.add_argument('-t', '--task', type=int, required=True,
                     help='Task number (starts at 0)')
-parser.add_argument('--prev', type=str, help='Previous task run id')
+parser.add_argument('--runid', type=str, help='Previous task run id')
 parser.add_argument('--test', action='store_true', help='Test the model')
 parser.add_argument('--train', action='store_true', help='Train the model')
 
@@ -57,9 +58,19 @@ args = parser.parse_args()
 if not valid_args(args):
     exit(1)
 
+if not os.path.exists(models_dir):
+    os.makedirs(models_dir, exist_ok=True)
+
+if not os.path.isdir(models_dir):
+    print(f'error: MODELS_DIR={models_dir} is not a directory')
+    exit(1)
+
 config = load_config_dict(args.config)
 name = run_name(args.config, args.task)
 wandb.init(project='icl-vae', entity='kdelcastillo', name=name, config=config)
+
+with open('.runid', 'w') as runid_file:
+    runid_file.write(wandb.run.id)
 
 config = Config(wandb.config)
 random.seed(config.seed)
@@ -74,27 +85,25 @@ model = Vicl().to(device)
 
 if args.train:
     if args.task != 0:
-        prev = args.task - 1
-        text = f'Loading model for task {prev}'
+        prev_task = args.task - 1
+        text = f'Loading model for task {prev_task}'
         halo = Halo(text=text, spinner='dots').start()
-        try:
-            handler = wandb.restore(
-                f'vicl-task-{prev}.pt', replace=True, run_path=f'kdelcastillo/icl-vae/{args.prev}')
-        except:
-            handler = None
 
-        if handler:
-            model.load(handler.name)
-            halo.succeed(f'Successfully loaded model for task {prev}')
-        else:
-            halo.fail(f'Failed to load model for task {prev}')
+        try:
+            model.load(f'{models_dir}/{args.runid}/vicl-task-{prev_task}.pt')
+            halo.succeed(f'Successfully loaded model for task {prev_task}')
+        except Exception as e:
+            halo.fail(f'Failed to load model for task {prev_task}: {e}')
             exit(1)
 
-    wandb.watch(model)
     try:
+        wandb.watch(model)
         data_train = CIFAR100(root='./data', train=True,
                               download=True, transform=transforms)
-        model = train(model, data_train, task=args.task, config=config)
+        models_run_dir = os.path.join(models_dir, wandb.run.id)
+        os.makedirs(models_run_dir, exist_ok=True)
+        model = train(model, data_train, task=args.task,
+                      config=config, models_dir=models_run_dir)
     except Exception as e:
         print(f'Training failed: {e}')
         exit(1)
@@ -103,17 +112,12 @@ if args.test:
     if not args.train:
         text = f'Loading model for task {args.task}'
         halo = Halo(text=text, spinner='dots').start()
-        try:
-            handler = wandb.restore(
-                f'vicl-task-{args.task}.pt', replace=True, run_path=f'kdelcastillo/icl-vae/{args.prev}')
-        except:
-            handler = None
 
-        if handler:
-            model.load(handler.name)
+        try:
+            model.load(f'{models_dir}/{args.runid}/vicl-task-{args.task}.pt')
             halo.succeed(f'Successfully loaded model for task {args.task}')
-        else:
-            halo.fail(f'Failed to load model for task {args.task}')
+        except Exception as e:
+            halo.fail(f'Failed to load model for task {args.task}: {e}')
             exit(1)
 
     data_test = CIFAR100(root='./data', train=False,

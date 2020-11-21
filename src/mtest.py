@@ -62,7 +62,7 @@ def test_with_subset(metric: str, model: Vicl, dataset: Dataset, task: int, batc
 
     assert len(label_corrects) == len(label_totals)
 
-    total_accuracy = 0
+    total_accuracy = 0.0
     acc = {}
     for label, total in label_totals.items():
         accuracy = label_corrects[label] / total
