@@ -66,12 +66,17 @@ def loss_term_cos(y, z_mu, z_logvar):
         sign = 1 if y[i] == y[j] else -1
         total += sign * \
             (cosine_distance(z_mu[i], z_mu[j], dim=0) +
-             cosine_distance(z_var[i], z_var[j], dim=0))
+             0.5 * cosine_distance(z_var[i], z_var[j], dim=0))
 
     return total
 
 
-def model_criterion(x, y, x_mu, x_logvar, z_mu, z_logvar, lambda_vae=1.0, lambda_cos=1.0):
+def loss_term_l1(z_mu, z_logvar):
+    z_var = calculate_var(z_logvar)
+    return torch.sum(z_mu.sum(dim=1) + z_var.sum(dim=1), dim=0)
+
+
+def model_criterion(x, y, x_mu, x_logvar, z_mu, z_logvar, lambda_vae=1.0, lambda_cos=1.0, lambda_l1=1.0):
     """
     Compute the whole loss term (aka model criterion), note that here isn't
     included the mas term loss (it's already included in `LocalSgd`)
@@ -79,8 +84,9 @@ def model_criterion(x, y, x_mu, x_logvar, z_mu, z_logvar, lambda_vae=1.0, lambda
 
     term_vae = loss_term_vae(x, x_mu, x_logvar, z_mu, z_logvar)
     term_cos = loss_term_cos(y, z_mu, z_logvar)
+    term_l1 = loss_term_l1(z_mu, z_logvar)
 
-    return (lambda_vae * term_vae) + (lambda_cos * term_cos)
+    return (lambda_vae * term_vae) + (lambda_cos * term_cos) + (lambda_l1 * term_l1)
 
 
 def split_classes_in_tasks(dataset: Dataset):
