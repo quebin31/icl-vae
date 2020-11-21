@@ -6,3 +6,4 @@ wandb
 .env
 .venv
 .vscode
+.runid
