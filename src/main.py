@@ -2,6 +2,7 @@ import argparse
 import os
 import random
 from argparse import Namespace
+from pathlib import Path
 
 import torch
 import wandb
@@ -39,6 +40,11 @@ def valid_args(args: Namespace):
     return valid
 
 
+def run_name(config_path: str, task: int):
+    config_path = Path(config_path)
+    return f'{config_path.stem} task {task}'
+
+
 parser = argparse.ArgumentParser(description='Train/test vicl model')
 parser.add_argument('-c', '--config', type=str, help='Hyperparameters config')
 parser.add_argument('-t', '--task', type=int, required=True,
@@ -52,7 +58,8 @@ if not valid_args(args):
     exit(1)
 
 config = load_config_dict(args.config)
-wandb.init(project='icl-vae', entity='kdelcastillo', config=config)
+name = run_name(args.config, args.task)
+wandb.init(project='icl-vae', entity='kdelcastillo', name=name, config=config)
 
 config = Config(wandb.config)
 random.seed(config.seed)
