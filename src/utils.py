@@ -73,7 +73,7 @@ def loss_term_cos(y, z_mu, z_logvar):
 
 def loss_term_l1(z_mu, z_logvar):
     z_var = calculate_var(z_logvar)
-    return torch.sum(z_mu.sum(dim=1) + z_var.sum(dim=1), dim=0)
+    return torch.sum(z_mu.abs().sum(dim=1) + z_var.abs().sum(dim=1), dim=0)
 
 
 def model_criterion(x, y, x_mu, x_logvar, z_mu, z_logvar, lambda_vae=1.0, lambda_cos=1.0, lambda_l1=1.0):
