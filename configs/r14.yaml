@@ -2,7 +2,7 @@ base:
   batch_size: 32
   checkpoint_interval: 50
   decay_every: 50
-  decay_rate: 1
+  decay_rate: 0.9
   epochs: 200
   lambda_cos: 15
   lambda_l1: 1
@@ -22,4 +22,4 @@ incr:
   learning_rate: 1.0e-07
 log_interval: 17
 rho: 0.8
-seed: 77
+seed: 847
