@@ -15,7 +15,7 @@ from yaml import Loader
 
 from config import Config, load_config_dict
 from modules.vicl import Vicl
-from mtest import test
+from test import test
 from train import train
 from utils import split_classes_in_tasks
 
