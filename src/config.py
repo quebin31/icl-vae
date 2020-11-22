@@ -28,5 +28,8 @@ def load_config_dict(path: Optional[str]):
     else:
         with open(path, mode='r') as file:
             config = yaml.load(file, Loader=Loader)
-            config.setdefault('seed', random.randint(0, 100))
+            config.setdefault('seed', 'random')
+            if config['seed'] == 'random':
+                config['seed'] = random.randint(0, 1000)
+
             return config
