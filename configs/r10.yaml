@@ -8,7 +8,7 @@ base:
   lambda_l1: 0
   lambda_reg: 0
   lambda_vae: 5
-  learning_rate: 0.000001
+  learning_rate: 1.0e-6
 incr:
   batch_size: 32
   checkpoint_interval: 25
