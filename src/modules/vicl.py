@@ -11,7 +11,7 @@ from modules.vgg import Vgg19
 
 
 class Vicl(nn.Module):
-    def __init__(self, vgg_weights: str = 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth'):
+    def __init__(self, rho: float, vgg_weights: str = 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth'):
         """
         Build the main model containing both the feature extractor and the 
         variational autoencoder.
@@ -22,6 +22,7 @@ class Vicl(nn.Module):
 
         super(Vicl, self).__init__()
 
+        self.rho = rho
         self.extractor = Vgg19()
         self.vae = Vae()
         self.reg_params = {}
@@ -79,7 +80,7 @@ class Vicl(nn.Module):
 
             mu_distances = cosine_distance(z_mu, proto_mu, dim=1)
             var_distances = cosine_distance(z_var, proto_var, dim=1)
-            distances = mu_distances + var_distances
+            distances = rho * mu_distances + (1.0 - rho) * var_distances
 
             for i in range(0, batch_size):
                 distance = distances[i].cpu().item()
