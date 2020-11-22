@@ -81,7 +81,7 @@ transforms = transforms.Compose([transforms.ToTensor()])
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'Using device: {device}')
-model = Vicl().to(device)
+model = Vicl(rho=config.rho).to(device)
 
 if args.train:
     if args.task != 0:

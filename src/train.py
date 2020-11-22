@@ -103,7 +103,7 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config, models_dir: 
             z_mu, z_logvar = output['z_mu'], output['z_logvar']
 
             loss = model_criterion(
-                x_features, labels, x_mu, x_logvar, z_mu, z_logvar,
+                x_features, labels, x_mu, x_logvar, z_mu, z_logvar, rho=model.rho,
                 lambda_vae=hyper.lambda_vae, lambda_cos=hyper.lambda_cos, lambda_l1=hyper.lambda_l1)
 
             if torch.isnan(loss).item():
