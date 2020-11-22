@@ -2,7 +2,7 @@ import random
 from typing import Optional
 
 import yaml
-from yaml import Loader
+from yaml import Loader, Dumper
 
 
 class Config:
@@ -29,7 +29,14 @@ def load_config_dict(path: Optional[str]):
         with open(path, mode='r') as file:
             config = yaml.load(file, Loader=Loader)
             config.setdefault('seed', 'random')
+            config.setdefault('rho', 0.5)
+
             if config['seed'] == 'random':
                 config['seed'] = random.randint(0, 1000)
 
-            return config
+        with open(path, mode='w') as file:
+            contents = yaml.dump(config, Dumper=Dumper,
+                                 default_flow_style=False)
+            file.write(contents)
+
+        return config
