@@ -13,17 +13,17 @@ def test(model: Vicl, dataset: Dataset, task: int, batch_size: int):
 
     base_subset = create_subset(
         dataset, task=0, tasks_indices=tasks_indices, accumulate=False)
-    test_with_subset('(Base)', model, base_subset, task, batch_size)
+    base_acc = test_with_subset('(Base)', model, base_subset, task, batch_size)
 
     new_subset = create_subset(
         dataset, task=task, tasks_indices=tasks_indices, accumulate=False)
-    test_with_subset('(New)', model, new_subset, task, batch_size)
+    new_acc = test_with_subset('(New)', model, new_subset, task, batch_size)
 
     all_subset = create_subset(
         dataset, task=task, tasks_indices=tasks_indices, accumulate=True)
-    test_with_subset('(All)', model, all_subset, task, batch_size)
+    all_acc = test_with_subset('(All)', model, all_subset, task, batch_size)
 
-    return model
+    return base_acc, new_acc, all_acc
 
 
 def test_with_subset(metric: str, model: Vicl, dataset: Dataset, task: int, batch_size: int):
@@ -63,13 +63,12 @@ def test_with_subset(metric: str, model: Vicl, dataset: Dataset, task: int, batc
     assert len(label_corrects) == len(label_totals)
 
     total_accuracy = 0.0
-    acc = {}
     for label, total in label_totals.items():
         accuracy = label_corrects[label] / total
         total_accuracy += accuracy
 
-    acc[f'{metric} Mean Acc. Task {task}'] = total_accuracy / len(label_totals)
-    wandb.log(acc)
+    accuracy = total_accuracy / len(label_totals)
+    wandb.log({f'{metric} Mean Acc. Task {task}': accuracy})
 
     halo.succeed()
-    return model
+    return accuracy

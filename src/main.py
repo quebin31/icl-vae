@@ -45,7 +45,11 @@ def run_name(config_path: str, task: int):
     return f'{config_path.stem} task {task}'
 
 
-models_dir = os.getenv("MODELS_DIR", "./models")
+def config_name(config_path: str):
+    config_path = Path(config_path)
+    return config_path.stem
+
+
 parser = argparse.ArgumentParser(description='Train/test vicl model')
 parser.add_argument('-c', '--config', type=str, help='Hyperparameters config')
 parser.add_argument('-t', '--task', type=int, required=True,
@@ -58,6 +62,8 @@ args = parser.parse_args()
 if not valid_args(args):
     exit(1)
 
+models_dir = os.getenv("MODELS_DIR", "./models")
+models_dir = os.path.join(models_dir, config_name(args.config))
 if not os.path.exists(models_dir):
     os.makedirs(models_dir, exist_ok=True)
 
@@ -69,8 +75,8 @@ config = load_config_dict(args.config)
 name = run_name(args.config, args.task)
 wandb.init(project='icl-vae', entity='kdelcastillo', name=name, config=config)
 
-with open('.runid', 'w') as runid_file:
-    runid_file.write(wandb.run.id)
+with open('.runid', 'w') as file:
+    file.write(wandb.run.id)
 
 config = Config(wandb.config)
 random.seed(config.seed)
@@ -122,4 +128,15 @@ if args.test:
 
     data_test = CIFAR100(root='./data', train=False,
                          download=True, transform=transforms)
-    model = test(model, data_test, task=args.task,  batch_size=16)
+    base_acc, new_acc, all_acc = test(
+        model, data_test, task=args.task,  batch_size=16)
+
+    results_dir = 'results'
+    if not os.path.isdir(results_dir):
+        if os.path.exists(results_dir):
+            os.remove(results_dir)
+        os.makedirs(results_dir)
+
+    results_csv = os.path.join(results_dir, f'{config_name(args.config)}.csv')
+    with open(results_csv, 'a') as file:
+        print(f'{base_acc}, {new_acc}, {all_acc}', file=file)
