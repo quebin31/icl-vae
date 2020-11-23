@@ -80,7 +80,7 @@ class Vicl(nn.Module):
 
             mu_distances = cosine_distance(z_mu, proto_mu, dim=1)
             var_distances = cosine_distance(z_var, proto_var, dim=1)
-            distances = rho * mu_distances + (1.0 - rho) * var_distances
+            distances = self.rho * mu_distances + (1.0 - self.rho) * var_distances
 
             for i in range(0, batch_size):
                 distance = distances[i].cpu().item()
