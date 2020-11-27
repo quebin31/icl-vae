@@ -10,8 +10,8 @@ from wandb import AlertLevel
 from config import Config
 from mas import LocalSgd, OmegaSgd, compute_omega_grads_norm
 from modules.vicl import Vicl
-from utils import create_subset, model_criterion, split_classes_in_tasks
-from utils import calculate_var
+from utils import create_subset, split_classes_in_tasks, calculate_var
+from utils import ViclLoss
 
 
 def save_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_scheduler: ExponentialLR, task: int, epoch: int, models_dir: str):
@@ -66,11 +66,11 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config, models_dir: 
     # Get the device we are going to use
     device = model.device()
 
-    # We're training our model
+    # We're training the model
     model.vae.train()
 
     model_optimizer = LocalSgd(
-        model.vae.parameters(), hyper.lambda_reg, lr=hyper.learning_rate)
+        model.vae.parameters(), hyper.lambda_reg, lr=hyper.learning_rate, momentum=hyper.momentum, nesterov=hyper.nesterov)
     moptim_scheduler = ExponentialLR(model_optimizer, gamma=hyper.decay_rate)
 
     # Create the data loader
@@ -83,6 +83,9 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config, models_dir: 
     # Try to load state dict from checkpoints
     epoch = maybe_load_checkpoint(
         model, model_optimizer, moptim_scheduler, task=task, models_dir=models_dir)
+    # Create the loss functor
+    loss_fn = ViclLoss(rho=model.rho, lambda_vae=hyper.lambda_vae,
+                       lambda_cos=hyper.lambda_cos, lambda_l1=hyper.lambda_l1)
 
     # Start training the model
     for epoch in range(epoch, hyper.epochs):
@@ -102,13 +105,9 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config, models_dir: 
             x_mu, x_logvar = output['x_mu'], output['x_logvar']
             z_mu, z_logvar = output['z_mu'], output['z_logvar']
 
-            loss = model_criterion(
-                x_features, labels, x_mu, x_logvar, z_mu, z_logvar, rho=model.rho,
-                lambda_vae=hyper.lambda_vae, lambda_cos=hyper.lambda_cos, lambda_l1=hyper.lambda_l1)
+            loss = loss_fn(x_features, labels, x_mu, x_logvar, z_mu, z_logvar)
 
             if torch.isnan(loss).item():
-                wandb.alert(
-                    title='NaN Loss', text='Loss value became NaN', level=AlertLevel.ERROR)
                 halo.fail(f'Epoch {epoch + 1} failed (loss became NaN)')
                 raise RuntimeError('Loss value became NaN')
 
@@ -138,7 +137,7 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config, models_dir: 
     if task > 0:
         model._consolidate_reg_params()
 
-    # Actually "learn" the new class(es)
+    # Actually learn the new class(es)
     label_total = {}
     model.eval()
     halo = Halo(text='Learning new classes', spinner='dots').start()
@@ -151,7 +150,7 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config, models_dir: 
         output = model(data)
         z_mu, z_var = output['z_mu'], calculate_var(output['z_logvar'])
 
-        # Sum the "mu" and "logvar" values, also count the total for each label
+        # Sum the "mu" and "var" values, also count the total for each label
         for i in range(0, labels.size(0)):
             label = labels[i].item()
 
