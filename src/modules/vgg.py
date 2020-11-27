@@ -47,7 +47,7 @@ class Vgg19(nn.Module):
     def forward(self, x):
         with torch.no_grad():
             features = self.features(x)
-            # start from dim-1, since dim-0 is for batch
+            # start from dim1, since dim0 is for batch
             return torch.flatten(features, start_dim=1)
 
 
