@@ -9,6 +9,8 @@ base:
   lambda_reg: 0
   lambda_vae: 5
   learning_rate: 1.0e-06
+  momentum: 0.9
+  nesterov: true
 incr:
   batch_size: 32
   checkpoint_interval: 25
@@ -20,6 +22,8 @@ incr:
   lambda_reg: 20
   lambda_vae: 5
   learning_rate: 1.0e-07
+  momentum: 0.9
+  nesterov: true
 log_interval: 17
-rho: 0.5
-seed: 86
+rho: 0.8
+seed: random
