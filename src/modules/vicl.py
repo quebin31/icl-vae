@@ -2,9 +2,10 @@ import math
 
 import torch
 from halo import Halo
-from torch import nn
+from torch import nn, Tensor
 from torchvision.models.utils import load_state_dict_from_url
 from utils import cosine_distance, empty, calculate_var
+from typing import Optional, List
 
 from modules.vae import Vae
 from modules.vgg import Vgg19
@@ -12,12 +13,12 @@ from modules.vgg import Vgg19
 
 class Vicl(nn.Module):
     def __init__(self, rho: float, vgg_weights: str = 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth'):
-        """
-        Build the main model containing both the feature extractor and the 
+        """Build the main model containing both the feature extractor and the 
         variational autoencoder.
 
-        weigths
-            The URL to use when loading weigths for the VGG.
+        Args:
+            rho (float): rho value.
+            vgg_weights (str, optional): vgg weights. Defaults to 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth'.
         """
 
         super(Vicl, self).__init__()
@@ -43,9 +44,14 @@ class Vicl(nn.Module):
             halo.warn(
                 f'There are unexpected keys in the VGG model ({unexpected})')
 
-    def forward(self, x):
-        """
-        Forward step, goes to the feature extractor then to the variational autoencoder.
+    def forward(self, x: Tensor):
+        """Forward step, goes to the feature extractor then to the variational autoencoder.
+
+        Args:
+            x (Tensor): Tensor input.
+
+        Returns:
+            Dict: Dictionary containing features and vae output.
         """
 
         features = self.extractor(x)
@@ -53,13 +59,20 @@ class Vicl(nn.Module):
 
         return {'features': features, **vae_output}
 
-    def predict(self, x, z_mu=None, z_logvar=None):
-        """
-        Predict classes
+    def predict(self, x: Tensor, z_mu: Optional[Tensor] = None, z_logvar: Optional[Tensor] = None):
+        """Predict classes.
+
+        Args:
+            x (Tensor): Tensor input.
+            z_mu (Optional[Tensor], optional): Already computed mu from encoder. Defaults to None.
+            z_logvar (Optional[Tensor], optional): Already computed logvar from encoder. Defaults to None.
+
+        Returns:
+            List: List of predicted labels.
         """
 
         # Allows us to pass already computed z_mu and z_logvar
-        if z_mu is None and z_logvar is None:
+        if z_mu is None or z_logvar is None:
             output = self(x)
             z_mu, z_logvar = output['z_mu'], output['z_logvar']
 
@@ -80,7 +93,8 @@ class Vicl(nn.Module):
 
             mu_distances = cosine_distance(z_mu, proto_mu, dim=1)
             var_distances = cosine_distance(z_var, proto_var, dim=1)
-            distances = self.rho * mu_distances + (1.0 - self.rho) * var_distances
+            distances = self.rho * mu_distances + \
+                (1.0 - self.rho) * var_distances
 
             for i in range(0, batch_size):
                 distance = distances[i].cpu().item()
@@ -92,8 +106,10 @@ class Vicl(nn.Module):
         return prediction
 
     def device(self):
-        """
-        Returns the device this model is on.
+        """Return the device where the model is located.
+
+        Returns:
+            Device: The device.
         """
         return next(self.parameters()).device
 
@@ -119,12 +135,11 @@ class Vicl(nn.Module):
     def learned_classes(self):
         return list(self.class_idents.keys())
 
-    def _init_reg_params_first_task(self, freeze=[]):
-        """
-        Initialize the omega values from MAS (initial task).
+    def _init_reg_params_first_task(self, freeze: List[str] = []):
+        """Initialize the omega values from MAS (initial task).
 
-        freeze 
-            Array of layers that shouldn't be included.
+        Args:
+            freeze (List[str], optional): Name of layers to freeze. Defaults to [].
         """
 
         device = self.device()
@@ -150,12 +165,11 @@ class Vicl(nn.Module):
         halo.succeed('Successfully initialized omega values (first task)')
         self.reg_params = reg_params
 
-    def _init_reg_params_subseq_tasks(self, freeze=[]):
-        """
-        Initialize the omega values from MAS (subsequent tasks).
+    def _init_reg_params_subseq_tasks(self, freeze: List[str] = []):
+        """Initialize the omega values from MAS (subsequent tasks).
 
-        freeze
-            Array of layers that shouldn't be included.
+        Args:
+            freeze (List[str], optional): Name of layers to freeze. Defaults to [].
         """
 
         device = self.device()
@@ -183,8 +197,7 @@ class Vicl(nn.Module):
         self.reg_params = reg_params
 
     def _consolidate_reg_params(self):
-        """
-        Updates the value (by addition) of omega across the tasks the model
+        """Updates the value (by addition) of omega across the tasks the model
         is exposed to.
         """
 
