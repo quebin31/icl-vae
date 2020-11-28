@@ -111,7 +111,7 @@ if args.train:
         model = train(model, data_train, task=args.task,
                       config=config, models_dir=models_run_dir)
     except Exception as e:
-        print(f'Training failed: {e}')
+        print(f'\nTraining failed: {e}')
         exit(1)
 
 if args.test:
