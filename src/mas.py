@@ -9,15 +9,10 @@ from modules.vicl import Vicl
 
 
 class LocalSgd(optim.SGD):
-    """
-    Optimizer that uses regularizer parameters (omegas) in the update of
-    the network parameters
-    """
-
-    def __init__(self, params, reg_lambda: float, lr=0.001, momentum=0, dampening=0, weight_decay=0, nesterov=False):
+    def __init__(self, params, lambda_reg: float, lr: float = 1e-3, momentum: float = 0, dampening: float = 0, weight_decay: float = 0, nesterov: bool = False):
         super(LocalSgd, self).__init__(params, lr,
                                        momentum, dampening, weight_decay, nesterov)
-        self.reg_lambda = reg_lambda
+        self.lambda_reg = lambda_reg
 
     def __setstate__(self, state):
         super(LocalSgd, self).__setstate__(state)
@@ -48,7 +43,7 @@ class LocalSgd(optim.SGD):
                     init_val = param_dict['init_val']
 
                     local_grad = torch.mul(
-                        2 * self.reg_lambda * omega, p - init_val)
+                        2 * self.lambda_reg * omega, p - init_val)
 
                     d_p = d_p.add(local_grad)
 
@@ -74,8 +69,93 @@ class LocalSgd(optim.SGD):
         return loss
 
 
+class LocalAdam(optim.Adam):
+    def __init__(self, params, lambda_reg: float, lr: float = 1e-3 betas: (float, float) = (0.9, 0.999), eps: float = 1e-8, weight_decay: float = 0, amsgrad: bool = False):
+        super(LocalAdam, self).__init__(
+            params, lr, betas, eps, weight_decay, amsgrad)
+        self.lambda_reg = lambda_reg
+
+    @torch.no_grad()
+    def step(self, reg_params, closure=None):
+        loss = None
+        if closure is not None:
+            with torch.enable_grad():
+                loss = closure()
+
+        for group in self.param_groups:
+            params_with_grad = []
+            grads = []
+            exp_avgs = []
+            exp_avg_sqs = []
+            state_sums = []
+            max_exp_avg_sqs = []
+            state_steps = []
+
+            for p in group['params']:
+                if p.grad is not None:
+                    params_with_grad.append(p)
+                    if p.grad.is_sparse:
+                        raise RuntimeError(
+                            'Adam does not support sparse gradients, please consider SparseAdam instead')
+
+                    if p in reg_params:
+                        param_dict = reg_params[p]
+
+                        omega = param_dict['omega']
+                        init_val = param_dict['init_val']
+                        local_grad = torch.mul(
+                            2 * self.lambda_reg * omega, p - init_val)
+
+                        p.grad = p.grad.add(local_grad)
+
+                    grads.append(p.grad)
+
+                    state = self.state[p]
+                    # Lazy state initialization
+                    if len(state) == 0:
+                        state['step'] = 0
+                        # Exponential moving average of gradient values
+                        state['exp_avg'] = torch.zeros_like(
+                            p, memory_format=torch.preserve_format)
+                        # Exponential moving average of squared gradient values
+                        state['exp_avg_sq'] = torch.zeros_like(
+                            p, memory_format=torch.preserve_format)
+                        if group['amsgrad']:
+                            # Maintains max of all exp. moving avg. of sq. grad. values
+                            state['max_exp_avg_sq'] = torch.zeros_like(
+                                p, memory_format=torch.preserve_format)
+
+                    exp_avgs.append(state['exp_avg'])
+                    exp_avg_sqs.append(state['exp_avg_sq'])
+
+                    if group['amsgrad']:
+                        max_exp_avg_sqs.append(state['max_exp_avg_sq'])
+
+                    # update the steps for each param group update
+                    state['step'] += 1
+                    # record the step after step update
+                    state_steps.append(state['step'])
+
+            beta1, beta2 = group['betas']
+            F.adam(params_with_grad,
+                   grads,
+                   exp_avgs,
+                   exp_avg_sqs,
+                   max_exp_avg_sqs,
+                   state_steps,
+                   group['amsgrad'],
+                   beta1,
+                   beta2,
+                   group['lr'],
+                   group['weight_decay'],
+                   group['eps']
+                   )
+
+        return loss
+
+
 class OmegaSgd(optim.SGD):
-    def __init__(self, params, lr=0.001, momentum=0, dampening=0, weight_decay=0, nesterov=False):
+    def __init__(self, params, lr: float = 0.001, momentum: float = 0, dampening: float = 0, weight_decay: float = 0, nesterov: bool = False):
         super(OmegaSgd, self).__init__(params, lr,
                                        momentum, dampening, weight_decay, nesterov)
 
