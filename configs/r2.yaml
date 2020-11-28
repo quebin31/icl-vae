@@ -11,6 +11,7 @@ base:
   learning_rate: 3.0e-07
   momentum: 0.9
   nesterov: true
+  optimizer: sgd
 incr:
   batch_size: 32
   checkpoint_interval: 25
@@ -24,6 +25,7 @@ incr:
   learning_rate: 3.0e-07
   momentum: 0.9
   nesterov: true
+  optimizer: sgd
 log_interval: 17
 rho: 0.8
 seed: 86

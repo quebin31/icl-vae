@@ -3,14 +3,14 @@ base:
   checkpoint_interval: 50
   decay_every: 50
   decay_rate: 1
-  epochs: 200
+  epochs: 300
   lambda_cos: 10
   lambda_l1: 0
   lambda_reg: 0
   lambda_vae: 5
-  learning_rate: 5.0e-07
+  learning_rate: 3.0e-07
   momentum: 0.9
-  nesterov: false
+  nesterov: true
   optimizer: sgd
 incr:
   batch_size: 32
@@ -22,9 +22,9 @@ incr:
   lambda_l1: 0
   lambda_reg: 20
   lambda_vae: 5
-  learning_rate: 5.0e-07
+  learning_rate: 3.0e-07
   momentum: 0.9
-  nesterov: false
+  nesterov: true
   optimizer: sgd
 log_interval: 17
 rho: 0.8

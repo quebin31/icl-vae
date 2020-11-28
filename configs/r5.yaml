@@ -9,9 +9,7 @@ base:
   lambda_reg: 0
   lambda_vae: 5
   learning_rate: 5.0e-07
-  momentum: 0.9
-  nesterov: false
-  optimizer: sgd
+  optimizer: adam
 incr:
   batch_size: 32
   checkpoint_interval: 25
@@ -23,9 +21,7 @@ incr:
   lambda_reg: 20
   lambda_vae: 5
   learning_rate: 5.0e-07
-  momentum: 0.9
-  nesterov: false
-  optimizer: sgd
+  optimizer: adam
 log_interval: 17
 rho: 0.8
 seed: 86
