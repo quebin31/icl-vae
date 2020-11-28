@@ -79,8 +79,8 @@ def loss_term_vae(x: Tensor, x_mu: Tensor, x_logvar: Tensor, z_mu: Tensor, z_log
     # Term log p(x|z) based on:
     # https://github.com/y0ast/Variational-Autoencoder/blob/master/VAE.py#L118
     LGP = -torch.sum((-0.5 * LOG_2_PI) + (-0.5 * x_logvar) +
-                     (-0.5 * (x - x_mu).pow(2) / (x_logvar.exp() + eps)))
-    KLD = -0.5 * torch.sum(1 + z_logvar - z_mu.pow(2) - z_logvar.exp())
+                     (-0.5 * (x - x_mu).pow(2) / (x_logvar.exp() + eps)), dim=1).mean()
+    KLD = -0.5 * torch.sum(1 + z_logvar - z_mu.pow(2) - z_logvar.exp(), dim=1).mean()
 
     return KLD + LGP
 
