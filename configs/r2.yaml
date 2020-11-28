@@ -8,7 +8,7 @@ base:
   lambda_l1: 0
   lambda_reg: 0
   lambda_vae: 5
-  learning_rate: 5.0e-07
+  learning_rate: 3.0e-07
   momentum: 0.9
   nesterov: true
 incr:
