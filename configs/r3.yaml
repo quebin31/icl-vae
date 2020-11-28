@@ -3,7 +3,7 @@ base:
   checkpoint_interval: 50
   decay_every: 50
   decay_rate: 1
-  epochs: 250
+  epochs: 300
   lambda_cos: 10
   lambda_l1: 0
   lambda_reg: 0
