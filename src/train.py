@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, Dataset
 from wandb import AlertLevel
 
 from config import Config
-from mas import LocalSgd, OmegaSgd, compute_omega_grads_norm
+from mas import LocalAdam, LocalSgd, OmegaSgd, compute_omega_grads_norm
 from modules.vicl import Vicl
 from utils import create_subset, split_classes_in_tasks, calculate_var
 from utils import ViclLoss
@@ -69,8 +69,19 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config, models_dir: 
     # We're training the model
     model.vae.train()
 
-    model_optimizer = LocalSgd(
-        model.vae.parameters(), hyper.lambda_reg, lr=hyper.learning_rate, momentum=hyper.momentum, nesterov=hyper.nesterov)
+    if hyper.optimizer == 'adam':
+        model_optimizer = LocalAdam(
+            params=model.vae.parameters(),
+            lambda_reg=hyper.lambda_reg,
+            lr=hyper.learning_rate)
+    else:
+        model_optimizer = LocalSgd(
+            params=model.vae.parameters(),
+            lambda_reg=hyper.lambda_reg,
+            lr=hyper.learning_rate,
+            momentum=hyper.momentum,
+            nesterov=hyper.nesterov)
+
     moptim_scheduler = ExponentialLR(model_optimizer, gamma=hyper.decay_rate)
 
     # Create the data loader
