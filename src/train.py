@@ -95,8 +95,12 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config, models_dir: 
     epoch = maybe_load_checkpoint(
         model, model_optimizer, moptim_scheduler, task=task, models_dir=models_dir)
     # Create the loss functor
-    loss_fn = ViclLoss(rho=model.rho, lambda_vae=hyper.lambda_vae,
-                       lambda_cos=hyper.lambda_cos, lambda_l1=hyper.lambda_l1)
+    loss_fn = ViclLoss(
+        rho=model.rho,
+        batch_multiplier=hyper.batch_multiplier,
+        lambda_vae=hyper.lambda_vae,
+        lambda_cos=hyper.lambda_cos,
+        lambda_l1=hyper.lambda_l1)
 
     # Start training the model
     for epoch in range(epoch, hyper.epochs):
