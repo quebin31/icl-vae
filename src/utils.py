@@ -80,12 +80,13 @@ def loss_term_vae(x: Tensor, x_mu: Tensor, x_logvar: Tensor, z_mu: Tensor, z_log
     # https://github.com/y0ast/Variational-Autoencoder/blob/master/VAE.py#L118
     LGP = -torch.sum((-0.5 * LOG_2_PI) + (-0.5 * x_logvar) +
                      (-0.5 * (x - x_mu).pow(2) / (x_logvar.exp() + eps)), dim=1).mean()
-    KLD = -0.5 * torch.sum(1 + z_logvar - z_mu.pow(2) - z_logvar.exp(), dim=1).mean()
+    KLD = -0.5 * torch.sum(1 + z_logvar - z_mu.pow(2) -
+                           z_logvar.exp(), dim=1).mean()
 
     return KLD + LGP
 
 
-def loss_term_cos(y: Tensor, z_mu: Tensor, z_logvar: Tensor, rho: float) -> float:
+def loss_term_cos(y: Tensor, z_mu: Tensor, z_logvar: Tensor, rho: float, batch_multiplier: float) -> float:
     """Compute the cosine term from the loss function.
 
     Args:
@@ -93,6 +94,7 @@ def loss_term_cos(y: Tensor, z_mu: Tensor, z_logvar: Tensor, rho: float) -> floa
         z_mu (Tensor): mu from decoder.
         z_logvar (Tensor): logvar from decoder.
         rho (float): Value rho from loss function.
+        batch_multiplier (float): Batch size multiplier. 
 
     Returns:
         float: Cosine loss term.
@@ -102,7 +104,8 @@ def loss_term_cos(y: Tensor, z_mu: Tensor, z_logvar: Tensor, rho: float) -> floa
     z_var = calculate_var(z_logvar)
 
     total = 0.0
-    for _ in range(batch_size):
+    times = int(batch_size * batch_multiplier)
+    for _ in range(times):
         i = random.randrange(0, batch_size)
         j = random.randrange(0, batch_size)
         while j == i:
@@ -129,7 +132,7 @@ def loss_term_l1(z_mu: Tensor) -> float:
 
 
 class ViclLoss(object):
-    def __init__(self, rho: float, lambda_vae: float, lambda_cos: float, lambda_l1: float):
+    def __init__(self, rho: float, batch_multiplier: float, lambda_vae: float, lambda_cos: float, lambda_l1: float):
         """Create the loss functor to compute the vicl loss value.
 
         Args:
@@ -142,6 +145,7 @@ class ViclLoss(object):
         self.lambda_vae = lambda_vae
         self.lambda_cos = lambda_cos
         self.lambda_l1 = lambda_l1
+        self.batch_multiplier = batch_multiplier
 
     def __call__(self, x: Tensor, y: Tensor, x_mu: Tensor, x_logvar: Tensor, z_mu: Tensor, z_logvar: Tensor) -> float:
         """Compute the loss function for the VICL model.
@@ -158,7 +162,8 @@ class ViclLoss(object):
         """
 
         term_vae = loss_term_vae(x, x_mu, x_logvar, z_mu, z_logvar)
-        term_cos = loss_term_cos(y, z_mu, z_logvar, self.rho)
+        term_cos = loss_term_cos(
+            y, z_mu, z_logvar, self.rho, self.batch_multiplier)
         term_l1 = loss_term_l1(z_mu)
 
         return (self.lambda_vae * term_vae) + (self.lambda_cos * term_cos) + (self.lambda_l1 * term_l1)

@@ -1,4 +1,5 @@
 base:
+  batch_multiplier: 1
   batch_size: 32
   checkpoint_interval: 50
   decay_every: 50
@@ -8,9 +9,10 @@ base:
   lambda_l1: 0
   lambda_reg: 0
   lambda_vae: 5
-  learning_rate: 5.0e-07
+  learning_rate: 1.0e-05
   optimizer: adam
 incr:
+  batch_multiplier: 1
   batch_size: 32
   checkpoint_interval: 25
   decay_every: 25
@@ -20,7 +22,7 @@ incr:
   lambda_l1: 0
   lambda_reg: 20
   lambda_vae: 5
-  learning_rate: 5.0e-07
+  learning_rate: 1.0e-05
   optimizer: adam
 log_interval: 17
 rho: 0.8

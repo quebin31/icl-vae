@@ -1,4 +1,5 @@
 base:
+  batch_multiplier: 1
   batch_size: 32
   checkpoint_interval: 50
   decay_every: 50
@@ -13,6 +14,7 @@ base:
   nesterov: false
   optimizer: sgd
 incr:
+  batch_multiplier: 1
   batch_size: 32
   checkpoint_interval: 25
   decay_every: 25
