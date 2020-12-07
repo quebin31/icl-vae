@@ -96,7 +96,8 @@ if args.train:
         halo = Halo(text=text, spinner='dots').start()
 
         try:
-            model.load(f'{models_dir}/{args.runid}/vicl-task-{prev_task}.pt')
+            model.load(
+                f'{models_dir}/{prev_task}/{args.runid}/vicl-task-{prev_task}.pt')
             halo.succeed(f'Successfully loaded model for task {prev_task}')
         except Exception as e:
             halo.fail(f'Failed to load model for task {prev_task}: {e}')
@@ -106,7 +107,7 @@ if args.train:
         wandb.watch(model)
         data_train = CIFAR100(root='./data', train=True,
                               download=True, transform=transforms)
-        models_run_dir = os.path.join(models_dir, wandb.run.id)
+        models_run_dir = os.path.join(models_dir, args.task, wandb.run.id)
         os.makedirs(models_run_dir, exist_ok=True)
         model = train(model, data_train, task=args.task,
                       config=config, models_dir=models_run_dir)
@@ -120,7 +121,8 @@ if args.test:
         halo = Halo(text=text, spinner='dots').start()
 
         try:
-            model.load(f'{models_dir}/{args.runid}/vicl-task-{args.task}.pt')
+            model.load(
+                f'{models_dir}/{args.task}/{args.runid}/vicl-task-{args.task}.pt')
             halo.succeed(f'Successfully loaded model for task {args.task}')
         except Exception as e:
             halo.fail(f'Failed to load model for task {args.task}: {e}')
@@ -139,4 +141,4 @@ if args.test:
 
     results_csv = os.path.join(results_dir, f'{config_name(args.config)}.csv')
     with open(results_csv, 'a') as file:
-        print(f'{base_acc}, {new_acc}, {all_acc}', file=file)
+        print(f'{args.task}, {base_acc}, {new_acc}, {all_acc}', file=file)
