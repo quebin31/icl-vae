@@ -39,9 +39,6 @@ class Vgg19(nn.Module):
             ###########################################
             nn.Conv2d(256, 512, kernel_size=3, padding=1),  # 512
             nn.ReLU(inplace=True),
-            ###########################################
-            nn.Conv2d(512, 512, kernel_size=3, padding=1),  # 512
-            nn.ReLU(inplace=True),
         )
 
     def forward(self, x):
