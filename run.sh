@@ -3,5 +3,4 @@
 set -e
 
 ./base.sh "$1"
-runid=$(cat .runid)
-./incremental.sh "$runid" "$1"
+./incremental.sh "$(cat .runid)" "$1"
