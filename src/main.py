@@ -107,7 +107,7 @@ if args.train:
         wandb.watch(model)
         data_train = CIFAR100(root='./data', train=True,
                               download=True, transform=transforms)
-        models_run_dir = os.path.join(models_dir, args.task, wandb.run.id)
+        models_run_dir = os.path.join(models_dir, str(args.task), wandb.run.id)
         os.makedirs(models_run_dir, exist_ok=True)
         model = train(model, data_train, task=args.task,
                       config=config, models_dir=models_run_dir)
