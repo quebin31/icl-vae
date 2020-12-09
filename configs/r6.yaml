@@ -18,7 +18,7 @@ incr:
   decay_every: 25
   decay_rate: 0.9
   epochs: 100
-  lambda_cos: 15
+  lambda_cos: 10
   lambda_l1: 0
   lambda_reg: 20
   lambda_vae: 5
