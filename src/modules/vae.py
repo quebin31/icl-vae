@@ -8,14 +8,14 @@ class Vae(nn.Module):
     def __init__(self):
         super(Vae, self).__init__()
 
-        self.fc1 = nn.Linear(8192, 6144)
-        self.fc2 = nn.Linear(6144, 4096)
-        self.fc3_mu = nn.Linear(4096, 2048)
-        self.fc3_lv = nn.Linear(4096, 2048)
-        self.fc4 = nn.Linear(2048, 4096)
-        self.fc5 = nn.Linear(4096, 6144)
-        self.fc6_mu = nn.Linear(6144, 8192)
-        self.fc6_lv = nn.Linear(6144, 8192)
+        self.fc1 = nn.Linear(8192, 4096)
+        self.fc2 = nn.Linear(4096, 2048)
+        self.fc3_mu = nn.Linear(2048, 2048)
+        self.fc3_lv = nn.Linear(2048, 2048)
+        self.fc4 = nn.Linear(2048, 2048)
+        self.fc5 = nn.Linear(2048, 4096)
+        self.fc6_mu = nn.Linear(4096, 8192)
+        self.fc6_lv = nn.Linear(4096, 8192)
 
     def encode(self, x):
         x = F.relu(self.fc1(x))
