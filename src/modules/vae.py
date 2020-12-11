@@ -9,23 +9,22 @@ class Vae(nn.Module):
         super(Vae, self).__init__()
 
         enc_layers = []
-        for idx, size in enumerate(layers['enc'][:-2]):
-            enc_layers.append(nn.Linear(size, layers[idx + 1]))
+        for idx, size in enumerate(layers.enc[:-2]):
+            enc_layers.append(nn.Linear(size, layers.enc[idx + 1]))
             enc_layers.append(nn.ReLU(inplace=True))
 
         self.enc = nn.Sequential(*enc_layers)
-        self.z_mu = nn.Linear(layers['enc'][-2], layers['enc'][-1])
-        self.z_lv = nn.Linear(layers['enc'][-2], layers['enc'][-1])
+        self.z_mu = nn.Linear(layers.enc[-2], layers.enc[-1])
+        self.z_lv = nn.Linear(layers.enc[-2], layers.enc[-1])
 
         dec_layers = []
-        for idx, size in enumerate(layers['dec'][:-2]):
-            dec_layers.append(nn.Linear(size, layers[idx + 1]))
+        for idx, size in enumerate(layers.dec[:-2]):
+            dec_layers.append(nn.Linear(size, layers.dec[idx + 1]))
             dec_layers.append(nn.ReLU(inplace=True))
 
         self.dec = nn.Sequential(*dec_layers)
-
-        self.x_mu = nn.Linear(layers['dec'][-2], layers['dec'][-1])
-        self.x_lv = nn.Linear(layers['dec'][-2], layers['dec'][-1])
+        self.x_mu = nn.Linear(layers.dec[-2], layers.dec[-1])
+        self.x_lv = nn.Linear(layers.dec[-2], layers.dec[-1])
 
     def encode(self, x):
         h = self.enc(x)
