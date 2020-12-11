@@ -1,8 +1,7 @@
 import random
 from typing import Optional
 
-import yaml
-from yaml import Loader, Dumper
+import ruamel.yaml
 
 
 class Config:
@@ -26,8 +25,9 @@ def load_config_dict(path: Optional[str]):
     if not path:
         return None
     else:
+        yaml = ruamel.yaml.YAML()
         with open(path, mode='r') as file:
-            config = yaml.load(file, Loader=Loader)
+            config = yaml.load(file)
             config.setdefault('seed', 'random')
             config.setdefault('rho', 0.5)
 
@@ -35,8 +35,7 @@ def load_config_dict(path: Optional[str]):
                 config['seed'] = random.randint(0, 1000)
 
         with open(path, mode='w') as file:
-            contents = yaml.dump(config, Dumper=Dumper,
-                                 default_flow_style=False)
-            file.write(contents)
+            yaml.default_flow_style = False
+            yaml.dump(config, file)
 
         return config

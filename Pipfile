@@ -5,8 +5,8 @@ name = "pypi"
 
 [packages]
 halo = "*"
-pyyaml = "*"
 wandb = "*"
+"ruamel.yaml" = "*"
 
 [dev-packages]
 autopep8 = "*"
