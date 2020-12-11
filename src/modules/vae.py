@@ -8,19 +8,29 @@ class Vae(nn.Module):
     def __init__(self):
         super(Vae, self).__init__()
 
-        self.fc1 = nn.Linear(8192, 6144)
-        self.fc2 = nn.Linear(6144, 4096)
-        self.fc3_mu = nn.Linear(4096, 2048)
-        self.fc3_lv = nn.Linear(4096, 2048)
-        self.fc4 = nn.Linear(2048, 4096)
-        self.fc5 = nn.Linear(4096, 6144)
-        self.fc6_mu = nn.Linear(6144, 8192)
-        self.fc6_lv = nn.Linear(6144, 8192)
+        self.enc = nn.Sequential(
+            nn.Linear(8192, 4096),
+            nn.ReLU(inplace=true),
+            nn.Linear(4096, 4096),
+            nn.ReLU(inplace=true),
+        )
+
+        self.z_mu = nn.Linear(4096, 2048)
+        self.z_lv = nn.Linear(4096, 2048)
+
+        self.dec = nn.Sequential(
+            nn.Linear(2048, 4096),
+            nn.ReLU(inplace=true),
+            nn.Linear(4096, 4096),
+            nn.ReLU(inplace=true),
+        )
+
+        self.x_mu = nn.Linear(4096, 8192)
+        self.x_lv = nn.Linear(4096, 8192)
 
     def encode(self, x):
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        return self.fc3_mu(x), self.fc3_lv(x)
+        h = self.enc(x)
+        return self.z_mu(h), self.z_lv(h)
 
     def reparameterize(self, mu, logvar):
         std = calculate_std(logvar)
@@ -28,9 +38,8 @@ class Vae(nn.Module):
         return mu + eps * std
 
     def decode(self, z):
-        z = F.relu(self.fc4(z))
-        z = F.relu(self.fc5(z))
-        return self.fc6_mu(z), self.fc6_lv(z)
+        h = self.dec(z)
+        return self.x_mu(h), self.x_lv(h)
 
     def forward(self, x):
         z_mu, z_logvar = self.encode(x)
