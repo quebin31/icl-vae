@@ -43,7 +43,7 @@ def maybe_load_checkpoint(model: Vicl, model_optimizer: LocalSgd, moptim_schedul
     try:
         checkpoint = torch.load(load_path, map_location=model.device())
     except Exception as e:
-        halo.fail(f'No checkpoints found for this run')
+        halo.fail(f'No checkpoints found for this run: {e}')
     else:
         model.load_state(checkpoint['model'])
         model_optimizer.load_state_dict(checkpoint['model_optimizer'])
@@ -144,9 +144,16 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config, models_dir: 
             save_checkpoint(model, model_optimizer,
                             moptim_scheduler, epoch=epoch, task=task, models_dir=models_dir)
 
+    del moptim_scheduler
+    del model_optimizer
+    torch.cuda.empty_cache()
+
     # After training the model for this task update the omega values
     omega_optimizer = OmegaSgd(model.reg_params)
     model = compute_omega_grads_norm(model, dataloader, omega_optimizer)
+
+    del omega_optimizer
+    torch.cuda.empty_cache()
 
     # Subsequent tasks must consolidate the omega values
     if task > 0:
