@@ -1,3 +1,9 @@
+# 0: 0.558
+# enc: 8192 -> 4096 -> 2048 -> (2048, 2048)
+# dec: 2048 -> 2048 -> 4096 -> (8192, 8192)
+log_interval: 17
+rho: 0.8
+seed: 86
 base:
   batch_multiplier: 1
   batch_size: 32
@@ -24,6 +30,3 @@ incr:
   lambda_vae: 5
   learning_rate: 2.0e-05
   optimizer: adam
-log_interval: 17
-rho: 0.8
-seed: 86

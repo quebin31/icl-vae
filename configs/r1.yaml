@@ -1,15 +1,20 @@
+# enc: 8192 -> 4096 -> (2048, 2048)
+# dec: 2048 -> 4096 -> (8192, 8192)
+log_interval: 17
+rho: 0.8
+seed: 86
 base:
   batch_multiplier: 1
   batch_size: 32
   checkpoint_interval: 50
   decay_every: 50
   decay_rate: 1
-  epochs: 200
+  epochs: 150
   lambda_cos: 10
   lambda_l1: 0
   lambda_reg: 0
   lambda_vae: 5
-  learning_rate: 1.0e-05
+  learning_rate: 0.0001
   optimizer: adam
 incr:
   batch_multiplier: 1
@@ -17,13 +22,11 @@ incr:
   checkpoint_interval: 25
   decay_every: 25
   decay_rate: 0.9
-  epochs: 100
+  epochs: 75
   lambda_cos: 10
   lambda_l1: 0
   lambda_reg: 20
   lambda_vae: 5
-  learning_rate: 1.0e-05
+  learning_rate: 0.0001
   optimizer: adam
-log_interval: 17
-rho: 0.8
-seed: 86
+
