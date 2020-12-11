@@ -4,7 +4,7 @@ base:
   checkpoint_interval: 50
   decay_every: 50
   decay_rate: 1
-  epochs: 150
+  epochs: 100
   lambda_cos: 10
   lambda_l1: 0
   lambda_reg: 0
@@ -17,7 +17,7 @@ incr:
   checkpoint_interval: 25
   decay_every: 25
   decay_rate: 0.9
-  epochs: 75
+  epochs: 50
   lambda_cos: 10
   lambda_l1: 0
   lambda_reg: 20
@@ -27,3 +27,12 @@ incr:
 log_interval: 17
 rho: 0.8
 seed: 86
+vae:
+  dec:
+  - 2048
+  - 4096
+  - 8192
+  enc:
+  - 8192
+  - 4096
+  - 2048

@@ -12,7 +12,7 @@ from modules.vgg import Vgg19
 
 
 class Vicl(nn.Module):
-    def __init__(self, rho: float, vgg_weights: str = 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth'):
+    def __init__(self, rho: float, vae_layers, vgg_weights: str = 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth'):
         """Build the main model containing both the feature extractor and the 
         variational autoencoder.
 
@@ -25,7 +25,7 @@ class Vicl(nn.Module):
 
         self.rho = rho
         self.extractor = Vgg19()
-        self.vae = Vae()
+        self.vae = Vae(layers=vae_layers)
         self.reg_params = {}
         self.class_idents = {}
 

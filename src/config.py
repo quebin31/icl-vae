@@ -25,7 +25,7 @@ def load_config_dict(path: Optional[str]):
     if not path:
         return None
     else:
-        yaml = ruamel.yaml.YAML()
+        yaml = ruamel.yaml.YAML(typ="safe")
         with open(path, mode='r') as file:
             config = yaml.load(file)
             config.setdefault('seed', 'random')

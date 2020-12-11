@@ -5,28 +5,27 @@ from utils import calculate_std
 
 
 class Vae(nn.Module):
-    def __init__(self):
+    def __init__(self, layers):
         super(Vae, self).__init__()
 
-        self.enc = nn.Sequential(
-            nn.Linear(8192, 4096),
-            nn.ReLU(inplace=true),
-            nn.Linear(4096, 4096),
-            nn.ReLU(inplace=true),
-        )
+        enc_layers = []
+        for idx, size in enumerate(layers['enc'][:-2]):
+            enc_layers.append(nn.Linear(size, layers[idx + 1]))
+            enc_layers.append(nn.ReLU(inplace=True))
 
-        self.z_mu = nn.Linear(4096, 2048)
-        self.z_lv = nn.Linear(4096, 2048)
+        self.enc = nn.Sequential(*enc_layers)
+        self.z_mu = nn.Linear(layers['enc'][-2], layers['enc'][-1])
+        self.z_lv = nn.Linear(layers['enc'][-2], layers['enc'][-1])
 
-        self.dec = nn.Sequential(
-            nn.Linear(2048, 4096),
-            nn.ReLU(inplace=true),
-            nn.Linear(4096, 4096),
-            nn.ReLU(inplace=true),
-        )
+        dec_layers = []
+        for idx, size in enumerate(layers['dec'][:-2]):
+            dec_layers.append(nn.Linear(size, layers[idx + 1]))
+            dec_layers.append(nn.ReLU(inplace=True))
 
-        self.x_mu = nn.Linear(4096, 8192)
-        self.x_lv = nn.Linear(4096, 8192)
+        self.dec = nn.Sequential(*dec_layers)
+
+        self.x_mu = nn.Linear(layers['dec'][-2], layers['dec'][-1])
+        self.x_lv = nn.Linear(layers['dec'][-2], layers['dec'][-1])
 
     def encode(self, x):
         h = self.enc(x)
