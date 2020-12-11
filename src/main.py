@@ -30,11 +30,11 @@ def valid_args(args: Namespace):
         print('error: --config should be provided when training task 0')
         valid = False
 
-    if args.train and args.task != 0 and not args.runid:
-        print('error: --id should be provided when training task != 0')
+    if args.train and args.task != 0 and not args.prev_id:
+        print('error: --prev-id should be provided when training task != 0')
 
-    if args.test and (not args.runid and not args.train):
-        print('error: --test should be used together with --train and/or --run-id')
+    if args.test and (not args.resume and not args.train):
+        print('error: --test should be used together with --train and/or --prev-id')
         valid = False
 
     return valid
@@ -54,7 +54,8 @@ parser = argparse.ArgumentParser(description='Train/test vicl model')
 parser.add_argument('-c', '--config', type=str, help='Hyperparameters config')
 parser.add_argument('-t', '--task', type=int, required=True,
                     help='Task number (starts at 0)')
-parser.add_argument('--runid', type=str, help='Previous task run id')
+parser.add_argument('--prev-id', type=str, help='Previous task run id')
+parser.add_argument('--resume', type=str, help='Resume task id')
 parser.add_argument('--test', action='store_true', help='Test the model')
 parser.add_argument('--train', action='store_true', help='Train the model')
 
@@ -73,7 +74,8 @@ if not os.path.isdir(models_dir):
 
 config = load_config_dict(args.config)
 name = run_name(args.config, args.task)
-wandb.init(project='icl-vae', entity='kdelcastillo', name=name, config=config)
+resume = 'must' if args.resume else False
+wandb.init(project='icl-vae', entity='kdelcastillo', name=name, config=config, id=args.resume, resume=resume)
 
 with open('.runid', 'w') as file:
     file.write(wandb.run.id)
@@ -97,7 +99,7 @@ if args.train:
 
         try:
             model.load(
-                f'{models_dir}/{prev_task}/{args.runid}/vicl-task-{prev_task}.pt')
+                f'{models_dir}/{prev_task}/{args.prev_id}/vicl-task-{prev_task}.pt')
             halo.succeed(f'Successfully loaded model for task {prev_task}')
         except Exception as e:
             halo.fail(f'Failed to load model for task {prev_task}: {e}')
@@ -122,7 +124,7 @@ if args.test:
 
         try:
             model.load(
-                f'{models_dir}/{args.task}/{args.runid}/vicl-task-{args.task}.pt')
+                f'{models_dir}/{args.task}/{wandb.run.id}/vicl-task-{args.task}.pt')
             halo.succeed(f'Successfully loaded model for task {args.task}')
         except Exception as e:
             halo.fail(f'Failed to load model for task {args.task}: {e}')
