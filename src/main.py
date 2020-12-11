@@ -6,18 +6,14 @@ from pathlib import Path
 
 import torch
 import wandb
-import yaml
 from halo import Halo
-from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
 from torchvision.datasets import CIFAR100
-from yaml import Loader
 
 from config import Config, load_config_dict
 from modules.vicl import Vicl
 from test import test
 from train import train
-from utils import split_classes_in_tasks
 
 
 def valid_args(args: Namespace):
@@ -75,7 +71,8 @@ if not os.path.isdir(models_dir):
 config = load_config_dict(args.config)
 name = run_name(args.config, args.task)
 resume = 'must' if args.resume else False
-wandb.init(project='icl-vae', entity='kdelcastillo', name=name, config=config, id=args.resume, resume=resume)
+wandb.init(project='icl-vae', entity='kdelcastillo', name=name,
+           config=config, id=args.resume, resume=resume)
 
 with open('.runid', 'w') as file:
     file.write(wandb.run.id)
