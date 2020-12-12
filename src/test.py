@@ -68,7 +68,7 @@ def test_with_subset(metric: str, model: Vicl, dataset: Dataset, task: int, batc
         total_accuracy += accuracy
 
     accuracy = total_accuracy / len(label_totals)
-    wandb.log({f'{metric} Mean Acc. Task {task}': accuracy})
+    wandb.log({f'{metric} Mean Acc.': accuracy})
 
     halo.succeed()
     return accuracy
