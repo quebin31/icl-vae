@@ -1,3 +1,4 @@
+augmentate: false
 base:
   batch_multiplier: 1
   batch_size: 32
