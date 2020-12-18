@@ -167,6 +167,7 @@ if args.test:
             halo.fail(f'Failed to load model for task {args.task}: {e}')
             exit(1)
 
+    torch.cuda.empty_cache()
     data_test = CIFAR100(
         root='./data',
         train=False,

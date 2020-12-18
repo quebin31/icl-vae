@@ -88,7 +88,7 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config, models_dir: 
     tasks_indices = split_classes_in_tasks(dataset)
     task_subset = create_subset(dataset, task, tasks_indices, accumulate=False)
     dataloader = DataLoader(
-        task_subset, batch_size=hyper.batch_size, shuffle=True, num_workers=6)
+        task_subset, batch_size=hyper.batch_size, shuffle=True, num_workers=4)
     num_batches = len(dataloader)
 
     # Try to load state dict from checkpoints
@@ -158,6 +158,8 @@ def train(model: Vicl, dataset: Dataset, task: int, config: Config, models_dir: 
     # Subsequent tasks must consolidate the omega values
     if task > 0:
         model._consolidate_reg_params()
+
+    torch.cuda.empty_cache()
 
     # Actually learn the new class(es)
     label_total = {}
