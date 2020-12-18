@@ -1,4 +1,3 @@
-augmentate: false
 base:
   batch_multiplier: 1
   batch_size: 32
@@ -9,7 +8,7 @@ base:
   lambda_cos: 10
   lambda_l1: 0
   lambda_reg: 0
-  lambda_vae: 1
+  lambda_vae: 5
   learning_rate: 1e-05
   optimizer: adam
 incr:
@@ -22,7 +21,7 @@ incr:
   lambda_cos: 10
   lambda_l1: 0
   lambda_reg: 20
-  lambda_vae: 1
+  lambda_vae: 5
   learning_rate: 1e-05
   optimizer: adam
 log_interval: 17
@@ -31,9 +30,11 @@ seed: 86
 vae:
   dec:
   - 2048
+  - 2048
   - 4096
   - 8192
   enc:
   - 8192
   - 4096
+  - 2048
   - 2048

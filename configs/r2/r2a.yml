@@ -1,6 +1,6 @@
 base:
   batch_multiplier: 1
-  batch_size: 32
+  batch_size: 16
   checkpoint_interval: 50
   decay_every: 50
   decay_rate: 1
@@ -9,11 +9,11 @@ base:
   lambda_l1: 0
   lambda_reg: 0
   lambda_vae: 5
-  learning_rate: 5e-05
+  learning_rate: 1e-05
   optimizer: adam
 incr:
   batch_multiplier: 1
-  batch_size: 32
+  batch_size: 16
   checkpoint_interval: 25
   decay_every: 25
   decay_rate: 0.9
@@ -22,7 +22,7 @@ incr:
   lambda_l1: 0
   lambda_reg: 20
   lambda_vae: 5
-  learning_rate: 5e-05
+  learning_rate: 1e-05
   optimizer: adam
 log_interval: 17
 rho: 0.8
@@ -30,9 +30,11 @@ seed: 86
 vae:
   dec:
   - 2048
+  - 3072
   - 4096
   - 8192
   enc:
   - 8192
   - 4096
+  - 3072
   - 2048
